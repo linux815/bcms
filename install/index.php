@@ -1,15 +1,20 @@
 <?php
+
 if (isset($_POST['submit'])) {
     try {
-
-        $dbh = new PDO("mysql:host=" . $_POST['localhost'] . ";", $_POST['user'], $_POST['password'], array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+        $dbh = new PDO(
+            "mysql:host=" . $_POST['localhost'] . ";",
+            $_POST['user'],
+            $_POST['password'],
+            array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'')
+        );
 
         $sql = "CREATE DATABASE IF NOT EXISTS " . $_POST['db'] . " CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 CREATE TABLE IF NOT EXISTS `" . $_POST['db'] . "`.`news` ( `id_news` INT(255) NOT NULL AUTO_INCREMENT , `title` VARCHAR(255) NOT NULL , `text` TEXT NOT NULL , `date` DATETIME NOT NULL , `delete` VARCHAR(2) NOT NULL DEFAULT '0' , PRIMARY KEY (`id_news`)) ENGINE = InnoDB;
 
 INSERT INTO `" . $_POST['db'] . "`.`news` (`id_news`, `title`, `text`, `date`, `delete`) VALUES (NULL, 'Первая новость', "
-                . "'<p style=\"text-align: left;\">&nbsp;&nbsp;&nbsp;&nbsp;Это первая тестовая новость. Для того чтобы отключить данный модуль со страницы, перейдите в администраторский раздел, в пункте страницы нажмите редактировать страницу \"Новости\" и в выпадающем списке \"Подключить модули\" выберите пункт \"Отключить все модули от данной страницы\" и нажмите кнопку \"Добавить\".</p>
+            . "'<p style=\"text-align: left;\">&nbsp;&nbsp;&nbsp;&nbsp;Это первая тестовая новость. Для того чтобы отключить данный модуль со страницы, перейдите в администраторский раздел, в пункте страницы нажмите редактировать страницу \"Новости\" и в выпадающем списке \"Подключить модули\" выберите пункт \"Отключить все модули от данной страницы\" и нажмите кнопку \"Добавить\".</p>
 <p style=\"text-align: left;\">&nbsp;&nbsp;&nbsp;&nbsp;Если необходимо отключить данный модуль со всех страниц, то перейдите в раздел \"Подключение модулей\" и в разделе \"Новости\" нажмите на ссылку \"Выключить\".</p>', '2015-08-15 19:32:48', '0');
 
 CREATE TABLE IF NOT EXISTS `" . $_POST['db'] . "`.`ghost` ( `id` INT NOT NULL AUTO_INCREMENT , `title` VARCHAR(255) NOT NULL , `email` VARCHAR(255) NOT NULL , `url` VARCHAR(255) NOT NULL , `message` TEXT NOT NULL , `date` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;
@@ -43,7 +48,7 @@ INSERT INTO `" . $_POST['db'] . "`.`page` (`id_page`, `title`, `text`, `date`, `
 
         $q = $dbh->prepare($sql);
         $q->execute();
-        $dbh = NULL;
+        $dbh = null;
 
         $code = '<?php
 /*
@@ -67,7 +72,7 @@ if (!defined("DBNAME")) {
 if (!defined("EMAIL")) {
 	define("EMAIL", "' . $_POST['email'] . '");
 }';
-        file_put_contents($_SERVER['DOCUMENT_ROOT'].'/bcms/classes/Config/Config.php', $code);
+        file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/bcms/classes/Config/Config.php', $code);
 
         echo "<center><h1>bCMS успешно установлена!</h1> <h3><a href='../bcms/index.php'>Перейти в администраторский раздел bCMS</a></h3</center>";
     } catch (PDOException $e) {
@@ -78,83 +83,91 @@ if (!defined("EMAIL")) {
 
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
-        <title>Установка bCMS 3.0</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-        <link rel="stylesheet" type="text/css" href="css/demo.css" />
-        <link rel="stylesheet" type="text/css" href="css/style.css" />
-        <!--[if lt IE 8]>
-                <style>
-                        .af-wrapper{display:none;}
-                        .ie-note{display:block;}
-                </style>
-        <![endif]-->
-    </head>
-    <body>
-        <div class="container">
-            <?php if (isset($_POST['submit'])): echo "";
-            else:
-                ?>
-                <header>
-                    <h1>Установка <span>bCMS</span></h1>
-                    <p>Заполните все поля.</p>
-                </header>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Установка bCMS 4.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/demo.css"/>
+    <link rel="stylesheet" type="text/css" href="css/style.css"/>
+    <!--[if lt IE 8]>
+    <style>
+        .af-wrapper {
+            display: none;
+        }
 
-                <section class="af-wrapper">
-                    <h3>Общие настройки</h3>
+        .ie-note {
+            display: block;
+        }
+    </style>
+    <![endif]-->
+</head>
+<body>
+<div class="container">
+    <?php
+    if (isset($_POST['submit'])): echo "";
+    else:
+        ?>
+        <header>
+            <h1>Установка <span>bCMS</span></h1>
+            <p>Заполните все поля.</p>
+        </header>
 
-                    <form class="af-form" id="af-form" novalidate method="post">
+        <section class="af-wrapper">
+            <h3>Общие настройки</h3>
 
-                        <div class="af-outer">
-                            <div class="af-inner">
-                                <label for="input-localhost">Хост</label>
-                                <input type="text" name="localhost" id="input-localhost">
-                            </div>
-                        </div>
+            <form class="af-form" id="af-form" novalidate method="post">
 
-                        <div class="af-outer af-required">
-                            <div class="af-inner">
-                                <label for="input-user">Пользователь</label>
-                                <input type="text" name="user" id="input-user" required>
-                            </div>
-                        </div>
+                <div class="af-outer">
+                    <div class="af-inner">
+                        <label for="input-localhost">Хост</label>
+                        <input type="text" name="localhost" id="input-localhost">
+                    </div>
+                </div>
 
-                        <div class="af-outer af-required">
-                            <div class="af-inner">
-                                <label for="input-password">Пароль</label>
-                                <input type="password" name="password" id="input-password" required>
-                            </div>
-                        </div>
+                <div class="af-outer af-required">
+                    <div class="af-inner">
+                        <label for="input-user">Пользователь</label>
+                        <input type="text" name="user" id="input-user" required>
+                    </div>
+                </div>
 
-                        <div class="af-outer">
-                            <div class="af-inner">
-                                <label for="input-db">Имя базы данных</label>
-                                <input type="text" name="db" id="input-db" placeholder="">
-                            </div>
-                        </div>
+                <div class="af-outer af-required">
+                    <div class="af-inner">
+                        <label for="input-password">Пароль</label>
+                        <input type="password" name="password" id="input-password" required>
+                    </div>
+                </div>
 
-                        <div class="af-outer af-required">
-                            <div class="af-inner">
-                                <label for="input-email">Email</label>
-                                <input type="email" name="email" id="input-email" required>
-                            </div>
-                        </div>
+                <div class="af-outer">
+                    <div class="af-inner">
+                        <label for="input-db">Имя базы данных</label>
+                        <input type="text" name="db" id="input-db" placeholder="">
+                    </div>
+                </div>
 
-                        <h3>Дополнительные настройки</h3>
+                <div class="af-outer af-required">
+                    <div class="af-inner">
+                        <label for="input-email">Email</label>
+                        <input type="email" name="email" id="input-email" required>
+                    </div>
+                </div>
 
-                        <div class="af-outer">
-                            <div class="af-inner">
-                                <label for="input-namesite">Название сайта</label>
-                                <input type="text" name="namesite" id="input-namesite">
-                            </div>
-                        </div>
+                <h3>Дополнительные настройки</h3>
 
-                        <input type="submit" value="Установить" name="submit" />
-                    </form>
-                </section>
-<?php endif; ?>  
-        </div>
-    </body>
+                <div class="af-outer">
+                    <div class="af-inner">
+                        <label for="input-namesite">Название сайта</label>
+                        <input type="text" name="namesite" id="input-namesite">
+                    </div>
+                </div>
+
+                <input type="submit" value="Установить" name="submit"/>
+            </form>
+        </section>
+    <?php
+    endif;
+    ?>
+</div>
+</body>
 </html>

@@ -1,0 +1,34 @@
+version: '3.1'
+services:
+  php:
+    image: 8.0.12-fpm
+    container_name: bcms-php-fpm
+    build:
+      context: .
+      dockerfile: ./docker/fpm.Dockerfile
+    volumes:
+        - .:/usr/share/nginx/html
+    links:
+        - mysql
+  web:
+    image: nginx:latest
+    container_name: bcms-nginx
+    ports:
+        - "8084:80"
+    volumes:
+        - .:/usr/share/nginx/html
+        - ./docker/site.conf:/etc/nginx/conf.d/site.conf
+    links:
+        - php
+  mysql:
+    image: mariadb
+    container_name: bcms-db
+    ports:
+        - 3306:3306
+    expose:
+        - 3306
+    volumes:
+        - ./docker/data:/var/lib/mysql:rw
+    environment:
+        - MYSQL_DATABASE=bcms
+        - MYSQL_ROOT_PASSWORD=secret

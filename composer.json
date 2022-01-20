@@ -1,0 +1,16 @@
+{
+  "name": "linux815/bcms",
+  "description": "CMS",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "linux815",
+      "email": "ivan.bazhenov@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "ext-pdo": "*"
+  }
+}
