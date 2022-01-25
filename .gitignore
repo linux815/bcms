@@ -4,3 +4,4 @@ out
 gen
 docker/data
 vendor/
+bcms/classes/Config/Config.php
