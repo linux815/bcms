@@ -1,589 +1,358 @@
-<?php namespace bcms\classes\Database;
+<?php
 
-use \PDO;
-use \PDOException;
-use \bcms\classes\Database\UserModel;
+declare(strict_types=1);
 
-require($_SERVER['DOCUMENT_ROOT'].'/bcms/classes/Config/Config.php');
+namespace bcms\classes\Database;
 
-/*
- * Менеджер пользователей
- * =======================
- * ToDo v1.02: 
- * 	1. Проверить функцию IsOnlain, возможно работает не правильно.
- * 	2. Проверить дубликаты функций.
- */
+use PDO;
+use PDOException;
+use Random\RandomException;
+
+require_once __DIR__ . '/../Config/Config.php';
+
 class UserModel
 {
+    private static ?UserModel $instance = null;
 
-    private static $instance; // экземпляр класса
-    private $msql;    // драйвер БД
-    private $sid;    // идентификатор текущей сессии
-    private $uid;    // идентификатор текущего пользователя
+    private PDO $dbh;
+    private ?string $sid = null;
+    private ?int $uid = null;
 
-    /*
-     * Получение экземпляра класса
-     * ============================
-     * Результат - экземпляр класса MSQL
-     */
-    public static function Instance()
+    private function __construct()
     {
-        if (self::$instance == null)
-            self::$instance = new UserModel();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $this->connect();
+    }
 
+    private function connect(): void
+    {
+        $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8', HOSTNAME, DBNAME);
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ];
+
+        try {
+            $this->dbh = new PDO($dsn, USERNAME, PASSWORD, $options);
+        } catch (PDOException $e) {
+            throw new PDOException('Ошибка подключения к БД: ' . $e->getMessage());
+        }
+    }
+
+    public static function Instance(): UserModel
+    {
+        if (self::$instance === null) {
+            self::$instance = new UserModel();
+        }
         return self::$instance;
     }
 
-    /*
-     * Конструктор
-     */
-    public function __construct()
+    public function clearSessions(): int
     {
-        if (!isset($_SESSION)) {
-            session_start();
-        }
-        $this->sid = null;
-        $this->uid = null;
+        $min = date('Y-m-d H:i:s', time() - 60 * 15);
+        $sql = 'DELETE FROM `sessions` WHERE `time_last` < :min';
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(['min' => $min]);
+        return $stmt->rowCount();
     }
 
-    /*
-     * Очистка неиспользуемых сессий
+    /**
+     * @param string $sql
+     * @param array<int|string, mixed> $params
+     * @return void
      */
-    public function clearSessions()
+    private function execute(string $sql, array $params = []): void
     {
-        try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $min = date('Y-m-d H:i:s', time() - 60 * 15);
-            $t = "time_last < '%s'";
-            $where = sprintf($t, $min);
-            $sql = "DELETE FROM sessions WHERE $where";
-
-            return $dbh->exec($sql);
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
+        $stmt = $this->dbh->prepare($sql);
+        foreach ($params as $key => $value) {
+            $type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue(is_int($key) ? $key + 1 : ':' . $key, $value, $type);
         }
+        $stmt->execute();
     }
 
-    /*
-     * Авторизация
-     * ==============
-     * $login - Логин
-     * $password - Пароль
-     * $remember - Нужно ли запомнить в куках
-     * Результат - true или false
-     */
-    public function login($login, $password, $remember = true)
+    public function login(string $login, string $password, bool $remember = true): bool
     {
-        // вытаскиваем пользователя из БД 
         $user = $this->getByLogin($login);
-
-        if ($user == null) {
+        if ($user === null) {
             return false;
         }
-
-        $id_user = $user['id_user'];
-
-        // проверяем пароль
-        if ($user['password'] != md5($password)) {
+        // Внимание: md5 не безопасен для паролей! Лучше использовать password_hash
+        if ($user['password'] !== md5($password)) {
             return false;
         }
-
-        // запоминаем имя и md5(пароль)
         if ($remember) {
             $expire = time() + 3600 * 24 * 100;
-            setcookie('login', $login, $expire);
-            setcookie('password', md5($password), $expire);
+            setcookie('login', $login, $expire, '/');
+            setcookie('password', md5($password), $expire, '/');
         }
-
-        // открываем сессию и запоминаем SID
-        $this->sid = $this->openSession($id_user);
-
+        $this->sid = $this->openSession((int)$user['id_user']);
         return true;
     }
 
-    /*
-     * Выход
+    public function getByLogin(string $login): ?array
+    {
+        $sql = 'SELECT * FROM `users` WHERE `login` = :login';
+        return $this->queryFetch($sql, ['login' => $login]);
+    }
+
+    /**
+     * @param string $sql
+     * @param array<int|string, mixed> $params
+ * @return array|null
      */
-    public function logout()
+    private function queryFetch(string $sql, array $params = []): ?array
     {
-        setcookie('login', '', time() - 1);
-        setcookie('password', '', time() - 1);
-        unset($_COOKIE['login']);
-        unset($_COOKIE['password']);
-        unset($_SESSION['sid']);
-        $this->sid = null;
-        $this->uid = null;
-    }
-
-    /*
-     * Получение пользователя
-     * ==========================
-     * $id_user - Если не указан, брать текущего
-     * Результат - Объект польвателя
-     */
-    public function get($id_user = null)
-    {
-        try {
-            // Если id_user не указан, берем его по текущей сессии.
-            if ($id_user == null) {
-                $id_user = $this->getUid();
-            }
-
-            if ($id_user == null) {
-                return null;
-            }
-
-            // А теперь просто возвращаем пользователя по id_user.
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT * FROM users WHERE id_user = '$id_user'";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
+        $stmt = $this->dbh->prepare($sql);
+        foreach ($params as $key => $value) {
+            $type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue(is_int($key) ? $key + 1 : ':' . $key, $value, $type);
         }
+        $stmt->execute();
+
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result === false ? null : $result;
     }
 
-    /*
-     * Получает пользователя по логину
-     */
-    public function getByLogin($login)
+    private function openSession(int $idUser): string
     {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "SELECT * FROM users WHERE login = '$login'";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    public function loging($id_user)
-    {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "SELECT * FROM users WHERE id_user <> '$id_user'";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    public function getLogin($id_user)
-    {
-        try {
-            // А теперь просто возвращаем пользователя по id_user.
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "SELECT COUNT(*) FROM users WHERE login = '$id_user'";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /*
-     * Проверка наличия привилегии
-     * ==============================
-     * $priv 		- Имя привилегии
-     * $id_user		- Если не указан, значит, для текущего
-     * Результат	- true или false
-     */
-    public function can($id_user = null)
-    {
-        try {
-            // Если id_user не указан, берем его по текущей сессии.
-            if ($id_user == null)
-                $id_user = $this->getUid();
-
-            if ($id_user == null)
-                return null;
-
-            // А теперь просто возвращаем пользователя по id_user.
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "SELECT COUNT(*) AS count, id_user FROM sessions GROUP BY id_user ORDER BY id_user";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /*
-     * Проверка активности пользователя
-     * ==================================
-     * $id_user		- Идентификатор
-     * Результат	- true если online
-     */
-    public function isOnline($id_user = null)
-    {
-        try {
-            // Если id_user не указан, берем его по текущей сессии.
-            if ($id_user == null)
-                $id_user = $this->getUid();
-
-            if ($id_user == null)
-                return null;
-
-            // А теперь просто возвращаем пользователя по id_user.
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            //$sql = "SELECT users.login, sessions.id_user FROM users, sessions WHERE users.id_user = sessions.id_user GROUP BY users.login HAVING sessions.id_user > '0'";
-            $sql = "SELECT n.id_user , c.id_user, c.login, c.avatar, c.name FROM sessions n INNER JOIN users c ON n.id_user = c.id_user WHERE n.id_user <> '$id_user' GROUP BY n.id_user ORDER BY n.id_user ";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /*
-     * Получение id текущего пользователя
-     * ====================================
-     * Результат - UID
-     */
-    public function getUid()
-    {
-        try {
-            // Проверка кеша.
-            if ($this->uid != null)
-                return $this->uid;
-
-            // Берем по текущей сессии.
-            $sid = $this->getSid();
-
-            if ($sid == null)
-                return null;
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "SELECT id_user FROM sessions WHERE sid = '$sid'";
-
-            $result = $dbh->query($sql)->fetch();
-
-            // Если сессию не нашли - значит пользователь не авторизован.
-            if (count($result) == 0)
-                return null;
-
-            // Если нашли - запоминм ее.
-            $this->uid = $result['id_user'];
-
-            return $this->uid;
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /*
-     * Функция возвращает идентификатор текущей сессии
-     * ================================================
-     * Результат - SID
-     */
-    private function getSid()
-    {
-        try {
-            // Проверка кеша.
-            if ($this->sid != null)
-                return $this->sid;
-
-            // Ищем SID в сессии.
-            if (isset($_SESSION['sid'])) {
-                $sid = $_SESSION['sid'];
-            } else {
-                $sid = null;
-            }
-
-            // Если нашли, попробуем обновить time_last в базе. 
-            // Заодно и проверим, есть ли сессия там.
-            if ($sid != null) {
-                $session = array();
-                $session = date('Y-m-d H:i:s');
-                $t = "sid = '%s'";
-                //$affected_rows = $this->msql->Update('sessions', $session, $where);
-                $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-                $sql = "UPDATE sessions
-	        SET time_last=?
-	        WHERE sid=?";
-
-                $q = $dbh->prepare($sql);
-                $q->execute(array($session, $sid));
-
-                $affected_rows = $q->rowCount();
-
-                $dbh = NULL; // Закрываем соединение	
-
-                if ($affected_rows == 0) {
-                    //	$t = "SELECT count(*) FROM sessions WHERE sid = '%s'";		
-                    //	$query = sprintf($t, mysql_real_escape_string($sid));
-                    // $result = $this->msql->Select($query);
-
-                    $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-                    $sql = "SELECT count(*) FROM sessions WHERE sid = '$sid'";
-
-                    $result = $dbh->query($sql)->fetch();
-
-                    $dbh = NULL; // Закрываем соединение	
-
-                    if ($result['count(*)'] == 0)
-                        $sid = null;
-                }
-            }
-
-            // Нет сессии? Ищем логин и md5(пароль) в куках.
-            // Т.е. пробуем переподключиться.
-            if ($sid == null && isset($_COOKIE['login'])) {
-                $user = $this->GetByLogin($_COOKIE['login']);
-
-                if ($user != null && $user['password'] == $_COOKIE['password'])
-                    $sid = $this->OpenSession($user['id_user']);
-            }
-
-            // Запоминаем в кеш.
-            if ($sid != null)
-                $this->sid = $sid;
-
-            // Возвращаем, наконец, SID.
-            return $sid;
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /*
-     * Открытие новой сессии
-     * ======================
-     * Результат - SID
-     */
-    private function openSession($id_user)
-    {
-        // генерируем SID
         $sid = $this->generateStr(10);
-
-        // вставляем SID в БД
         $now = date('Y-m-d H:i:s');
-        $session = array();
-        $session['id_user'] = $id_user;
-        $session['sid'] = $sid;
-        $session['time_start'] = $now;
-        $session['time_last'] = $now;
-     //   $session['online'] = "Онлайн";
 
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+        $sql = 'INSERT INTO `sessions` (`id_user`, `sid`, `time_start`, `time_last`) VALUES (:id_user, :sid, :time_start, :time_last)';
+        $this->execute($sql, [
+            'id_user' => $idUser,
+            'sid' => $sid,
+            'time_start' => $now,
+            'time_last' => $now,
+        ]);
 
-            $sql = "INSERT INTO sessions (id_user, sid, time_start, time_last) VALUES ('$id_user','$sid','$now','$now')";
-            $q = $dbh->exec($sql);
-
-            $dbh = NULL; // Закрываем соединение	
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
-        //$this->msql->Insert('sessions', $session); 
-        // регистрируем сессию в PHP сессии
         $_SESSION['sid'] = $sid;
-
-        // возвращаем SID
         return $sid;
     }
 
-    /*
-     * Генерация случайной последовательности
-     * =======================================
-     * $length 		- Ее длина
-     * Результат	- Случайная строка
+    /**
+     * @throws RandomException
      */
-    private function generateStr($length = 10)
+    private function generateStr(int $length = 10): string
     {
-        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRQSTUVWXYZ0123456789";
-        $code = "";
-        $clen = strlen($chars) - 1;
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRQSTUVWXYZ0123456789';
+        $code = '';
+        $maxIndex = strlen($chars) - 1;
 
-        while (strlen($code) < $length)
-            $code .= $chars[mt_rand(0, $clen)];
+        for ($i = 0; $i < $length; $i++) {
+            $code .= $chars[random_int(0, $maxIndex)];
+        }
 
         return $code;
     }
 
-    /*
-     * ======================================================================================
-     * ==Работа с пользователями==
-     * ======================================================================================
+    public function logout(): void
+    {
+        setcookie('login', '', time() - 3600, '/');
+        setcookie('password', '', time() - 3600, '/');
+        unset($_COOKIE['login'], $_COOKIE['password'], $_SESSION['sid']);
+        $this->sid = null;
+        $this->uid = null;
+    }
+
+    public function get(?int $idUser = null): ?array
+    {
+        if ($idUser === null) {
+            $idUser = $this->getUid();
+        }
+        if ($idUser === null) {
+            return null;
+        }
+        $sql = 'SELECT * FROM `users` WHERE `id_user` = :id';
+        return $this->queryFetch($sql, ['id' => $idUser]);
+    }
+
+    public function getUid(): ?int
+    {
+        if ($this->uid !== null) {
+            return $this->uid;
+        }
+        $sid = $this->getSid();
+        if ($sid === null) {
+            return null;
+        }
+        $sql = 'SELECT `id_user` FROM `sessions` WHERE `sid` = :sid';
+        $result = $this->queryFetch($sql, ['sid' => $sid]);
+        if (empty($result)) {
+            return null;
+        }
+        $this->uid = (int)$result['id_user'];
+        return $this->uid;
+    }
+
+    private function getSid(): ?string
+    {
+        if ($this->sid !== null) {
+            return $this->sid;
+        }
+        $sid = $_SESSION['sid'] ?? null;
+
+        if ($sid !== null) {
+            $now = date('Y-m-d H:i:s');
+            $sql = 'UPDATE `sessions` SET `time_last` = :now WHERE `sid` = :sid';
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(['now' => $now, 'sid' => $sid]);
+
+            if ($stmt->rowCount() === 0) {
+                $sqlCheck = 'SELECT COUNT(*) as count FROM `sessions` WHERE `sid` = :sid';
+                $result = $this->queryFetch($sqlCheck, ['sid' => $sid]);
+                if (empty($result) || $result['count'] == 0) {
+                    $sid = null;
+                }
+            }
+        }
+
+        if ($sid === null && isset($_COOKIE['login'], $_COOKIE['password'])) {
+            $user = $this->getByLogin($_COOKIE['login']);
+            if ($user !== null && $user['password'] === $_COOKIE['password']) {
+                $sid = $this->openSession((int)$user['id_user']);
+            }
+        }
+
+        $this->sid = $sid;
+        return $sid;
+    }
+
+    /** Получить всех пользователей кроме указанного ID */
+    public function listExcept(int $idUser): array
+    {
+        $sql = 'SELECT * FROM `users` WHERE `id_user` <> :id AND `delete` = 0';
+        return $this->queryFetchAll($sql, ['id' => $idUser]);
+    }
+
+    /**
+     * @param string $sql
+     * @param array<int|string, mixed> $params
+     * @param array<int|string, mixed> $paramTypes
+     * @return array
      */
-    /*
-     * Получает пользователя по логину
-     */
-    public function selectUser($start, $num)
+    private function queryFetchAll(string $sql, array $params = [], array $paramTypes = []): array
     {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT * FROM users WHERE users.delete = 0 ORDER BY id_user ASC LIMIT $start, $num";
-
-            return $dbh->query($sql)->fetchAll();
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
+        $stmt = $this->dbh->prepare($sql);
+        foreach ($params as $i => $value) {
+            $type = $paramTypes[$i] ?? (is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            $stmt->bindValue(is_int($i) ? $i + 1 : ':' . $i, $value, $type);
         }
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /*
-     * Проверяем когда был пользователь в онлайне и был ли он там
-     */
-    public function selectUserSession($id_user)
+    public function getLoginCount(string $login): int
     {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT * FROM sessions WHERE sessions.id_user= $id_user ORDER BY id_user ASC";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
+        $sql = 'SELECT COUNT(*) as count FROM `users` WHERE `login` = :login';
+        $result = $this->queryFetch($sql, ['login' => $login]);
+        return (int)($result['count'] ?? 0);
     }
 
-    /*
-     * Получает пользователя по id_user
-     */
-    public function selectUserID($id_user)
+    public function isOnlineExcept(?int $idUser = null): array
     {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT *, DATE_FORMAT(birth_date,'%d.%m.%Y') as birth_date FROM users WHERE id_user = $id_user";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
+        if ($idUser === null) {
+            $idUser = $this->getUid();
         }
+        if ($idUser === null) {
+            return [];
+        }
+        $sql = 'SELECT n.id_user, c.id_user, c.login, c.avatar, c.name
+                FROM `sessions` n
+                INNER JOIN `users` c ON n.id_user = c.id_user
+                WHERE n.id_user <> :id
+                GROUP BY n.id_user
+                ORDER BY n.id_user';
+        return $this->queryFetchAll($sql, ['id' => $idUser]);
     }
 
-    public function countUser()
+    public function selectUser(int $start, int $num): array
     {
-        try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT COUNT(*) as count FROM users where users.delete = 0 ORDER BY id_user ASC";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
+        $sql = 'SELECT * FROM `users` WHERE `delete` = 0 ORDER BY `id_user` ASC LIMIT :start, :num';
+        return $this->queryFetchAll($sql, ['start' => $start, 'num' => $num], [PDO::PARAM_INT, PDO::PARAM_INT]);
     }
 
-    public function deleteUser($id)
+    public function selectUserSession(int $idUser): array
     {
-        try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "UPDATE users
-			SET users.delete=1
-			WHERE id_user=?";
-
-            $q = $dbh->prepare($sql);
-            $q->execute(array($id));
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
+        $sql = 'SELECT * FROM `sessions` WHERE `id_user` = :id ORDER BY `id_user` ASC';
+        return $this->queryFetchAll($sql, ['id' => $idUser]);
     }
 
-    public function deleteUserALL()
+    public function selectUserID(int $idUser): ?array
     {
-        try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "UPDATE users
-	        SET users.delete=1
-	        WHERE id_user>1";
-
-            $q = $dbh->prepare($sql);
-            $q->execute(array());
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
+        $sql = "SELECT *, DATE_FORMAT(`birth_date`, '%d.%m.%Y') as birth_date FROM `users` WHERE `id_user` = :id";
+        return $this->queryFetch($sql, ['id' => $idUser]);
     }
 
-    public function editUserInfo($id, $password, $name, $surname, $email, $lastname, $avatar, $birth_date, $sex, $city, $mobile_phone, $work_phone, $skype)
+    public function countUser(): int
     {
-        try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "UPDATE users
-	        SET password=?, name=?, surname=?, email=?, lastname=?, avatar=?, birth_date=?, sex=?, city=?, mobile_phone=?, work_phone=?, skype=?
-	        WHERE id_user=?; COMMIT;";
-
-            $q = $dbh->prepare($sql);
-            $q->execute(array($password, $name, $surname, $email, $lastname, $avatar, $birth_date, $sex, $city, $mobile_phone, $work_phone, $skype, $id));
-
-            $dbh = NULL; // Закрываем соединение
-        } catch (PDOException $e) {
-            return $e->getMessage();
-        }
+        $sql = 'SELECT COUNT(*) as count FROM `users` WHERE `delete` = 0';
+        $result = $this->queryFetch($sql);
+        return (int)($result['count'] ?? 0);
     }
 
-    /*
-      public function SelectRecycleCount()
-      {
-      try {
-      $dbh = new PDO("mysql:host=".HOSTNAME.";dbname=".DBNAME."", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+    public function deleteUser(int $id): void
+    {
+        $sql = 'UPDATE `users` SET `delete` = 1 WHERE `id_user` = :id';
+        $this->execute($sql, ['id' => $id]);
+    }
 
-      $sql = "SELECT SUM(cnt)
-      FROM
-      (
-      SELECT COUNT(*) AS cnt FROM page where page.delete = '1'
-      UNION
-      SELECT COUNT(*) AS cnt FROM users where users.delete = '1'
-      UNION
-      SELECT COUNT(*) AS cnt FROM news where news.delete = '1'
-      ) AS t";
+    public function deleteUserALL(): void
+    {
+        $sql = 'UPDATE `users` SET `delete` = 1 WHERE `id_user` > 1';
+        $this->execute($sql);
+    }
 
-      return $dbh->query($sql);
+    public function editUserInfo(
+        int $id,
+        string $password,
+        string $name,
+        string $surname,
+        string $email,
+        string $lastname,
+        string $avatar,
+        string $birthDate,
+        string $sex,
+        string $city,
+        string $mobilePhone,
+        string $workPhone,
+        string $skype,
+    ): void {
+        $sql = 'UPDATE `users` SET 
+            `password` = :password, 
+            `name` = :name, 
+            `surname` = :surname, 
+            `email` = :email, 
+            `lastname` = :lastname, 
+            `avatar` = :avatar,
+            `birth_date` = :birth_date, 
+            `sex` = :sex, 
+            `city` = :city, 
+            `mobile_phone` = :mobile_phone, 
+            `work_phone` = :work_phone, 
+            `skype` = :skype 
+            WHERE `id_user` = :id';
 
-      $dbh = NULL; // Закрываем соединение
-      }
-      catch (PDOException $e)
-      {
-      return $e->getMessage();
-      }
-      } */
+        $params = [
+            'password' => $password,
+            'name' => $name,
+            'surname' => $surname,
+            'email' => $email,
+            'lastname' => $lastname,
+            'avatar' => $avatar,
+            'birth_date' => $birthDate,
+            'sex' => $sex,
+            'city' => $city,
+            'mobile_phone' => $mobilePhone,
+            'work_phone' => $workPhone,
+            'skype' => $skype,
+            'id' => $id,
+        ];
+
+        $this->execute($sql, $params);
+    }
 }

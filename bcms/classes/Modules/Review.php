@@ -1,59 +1,50 @@
 <?php
 /*
- * Review.php - отзывы
+ * Review.php — модуль "Обратная связь"
  */
+
 namespace bcms\classes\Modules;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\ReviewModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\ReviewModel;
 
-/*
- * Контроллер страницы чтения
- */
 class Review extends Base
 {
-	protected $reviews   = '';
-	protected $review_id = ''; 
-	
-	/*
-	 * Виртуальный обработчик запроса
-	 */
-	protected function onInput()
-	{		
-		parent::onInput();
+    private array $reviews = [];
+    private ?array $reviewId = null;
 
-		// Объявляем экземпляры классов для работы с базой данных		
-		$database = new ReviewModel();		
+    protected function onInput(): void
+    {
+        parent::onInput();
 
-		// Задаем заголовок для страницы представления		
-		$this->title = 'Обратная связь - ' . $this->title;		
-		
-		$this->reviews = $database->selectReview();	
+        $database = new ReviewModel();
+        $this->title = 'Обратная связь - ' . $this->title;
 
-        $delete = filter_input(INPUT_GET, 'delete', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-		if (isset($delete)) {
-			$id = trim($delete);
-			$database->deleteReview($id);
-			header('Location: index.php?c=review');
-			die();
-		}
-        
-        $view = filter_input(INPUT_GET, 'view', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        // Удаление отзыва
+        $deleteId = filter_input(INPUT_GET, 'delete', FILTER_VALIDATE_INT);
+        if ($deleteId) {
+            $database->deleteReview($deleteId);
+            header('Location: index.php?c=review');
+            exit;
+        }
 
-		if (isset($view)) {
-			$id = htmlspecialchars(trim($view), ENT_QUOTES);
-			$this->review_id = $database->selectReviewId($id);
-		}
-	}
-	
-	/*
-	 * Виртуальный генератор HTML
-	 */
-	protected function onOutput()
-	{
-		$vars = array('reviews' => $this->reviews, 'review_id' => $this->review_id);	
-		$this->content = $this->template('templates/v_review.php', $vars);
-		parent::onOutput();
-	}	
+        // Просмотр конкретного отзыва
+        $viewId = filter_input(INPUT_GET, 'view', FILTER_VALIDATE_INT);
+        if ($viewId) {
+            $this->reviewId = $database->selectReviewId($viewId);
+        }
+
+        // Получение всех отзывов
+        $this->reviews = $database->selectReview();
+    }
+
+    protected function onOutput(): void
+    {
+        $vars = [
+            'reviews' => $this->reviews,
+            'review_id' => $this->reviewId,
+        ];
+        $this->content = $this->template('templates/v_review.php', $vars);
+        parent::onOutput();
+    }
 }

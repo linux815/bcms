@@ -1,98 +1,101 @@
 <?php
-/*
- * Base.php - базовый (основной) класс
- */
-namespace classes\BaseClass;
 
-use \classes\Controller\Controller;
-use \bcms\classes\Database\UserModel;
-use \bcms\classes\Database\DatabaseModel;
+namespace Classes\BaseClass;
 
-/*
+use App\Helpers\ViteAssets;
+use bcms\classes\Database\DatabaseModel;
+use bcms\classes\Database\UserModel;
+use Classes\Controller\Controller;
+
+/**
  * Базовый контроллер сайта
  */
 abstract class Base extends Controller
 {
-    protected $title;  // заголовок страницы
-    protected $content;  // содержание страницы
-    protected $settings; // настройки cms
-    private $pages; // массив страниц
-    private $news; // подключение новости
-    private $temp; // временная переменная
-    protected $user; // текущий пользователь
+    protected string $title = '';
+    protected string $content = '';
+    protected array $settings = [];
+    protected ?array $user = null;
+    private ?array $pages = null;
+    private ?int $news = null;
+    private ?array $temp = null;
 
-    /*
-     * Контроллер
+    /**
+     * Конструктор
      */
-    function __construct()
+    public function __construct()
     {
-        if (!isset($_SESSION)) {
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
     }
 
-    /*
-     * Виртуальный обработчик
+    /**
+     * Виртуальный обработчик запроса
      */
-    protected function onInput()
+    protected function onInput(): void
     {
-        // Основной заголовок страницы 
-        $this->title = 'Новоозерновская основная общеобразовательная школа';
-        // Содержание страницы
+        $this->title = 'Сайт школы';
         $this->content = '';
 
-        // Объявляем экземпляры классов для работы с базой данных
         $database = new DatabaseModel();
+        $userModel = UserModel::Instance();
 
-        $mUsers = UserModel::Instance();
+        // Очистка старых сессий
+        $userModel->clearSessions();
 
-        // Очистка старых сессий.
-        $mUsers->ClearSessions();
+        // Получаем текущего пользователя
+        $this->user = $userModel->get();
 
-        // Текущий пользователь.
-        $this->user = $mUsers->Get();
-
-        // Загружаем настройки cms из базы данных
+        // Загружаем настройки CMS
         $this->settings = $database->selectSettings();
 
-        $c = filter_input(INPUT_GET, 'c', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-        if ($c == NULL) {
+        $controller = filter_input(INPUT_GET, 'c', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+        if ($controller === null) {
             header('Location: index.php?c=view&id=1');
+            exit;
         }
 
-        $table = "page";
+        $table = 'page';
 
-        // Загружаем все страницы из таблицы Page
+        // Загружаем все страницы
         $this->pages = $database->select($table);
 
         $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-        if (isset($id)) {
+
+        if ($id !== null) {
             $this->temp = $database->selectPageId($id);
 
-            // Если на текущей странице news равен 1, то подключаем модуль "Новости"
-            if ($this->temp['news'] == 1) {
+            if (!empty($this->temp['news']) && $this->temp['news'] === 1) {
                 $this->news = 1;
             }
         }
     }
 
-    /*
+    /**
      * Виртуальный генератор HTML
      */
-    protected function OnOutput()
+    protected function onOutput(): void
     {
-        $vars = array(
+        $viteAssets = new ViteAssets(
+            __DIR__ . '/../../public/assets/manifest.json',
+        );
+
+        $vars = [
             'title' => $this->title,
             'content' => $this->content,
             'user' => $this->user,
             'pages' => $this->pages,
             'news' => $this->news,
             'settings' => $this->settings,
-            'temp' => $this->temp
-        );
-        $page = $this->Template('templates/' . $this->settings['template'] . '/v_main.php', $vars);
+            'temp' => $this->temp,
+            'viteAssets' => $viteAssets,
+        ];
+
+        $templatePath = 'templates/' . ($this->settings['template'] ?? 'default') . '/v_main.php';
+        $page = $this->template($templatePath, $vars);
+
         echo $page;
     }
 }

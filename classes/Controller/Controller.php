@@ -1,72 +1,79 @@
-<?php namespace classes\controller;
+<?php
 
-/*
+namespace Classes\Controller;
+
+use RuntimeException;
+
+/**
  * Базовый класс контроллера
  */
 abstract class Controller
 {
-    /*
-     * Конструктор
+    /**
+     * Полная обработка HTTP-запроса
      */
-    function __construct()
-    {
-        
-    }
-
-    /*
-     * Полная обработка HTTP запроса
-     */
-    public function request()
+    public function request(): void
     {
         $this->onInput();
         $this->onOutput();
     }
 
-    /*
+    /**
      * Виртуальный обработчик запроса
      */
-    protected function onInput()
+    protected function onInput(): void
     {
-        
+        // Переопределяется в наследниках
     }
 
-    /*
+    /**
      * Виртуальный генератор HTML
      */
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        
+        // Переопределяется в наследниках
     }
 
-    /*
-     * Запрос произведен методом GET?
+    /**
+     * Проверяет, что запрос сделан методом GET
      */
-    protected function isGet()
+    protected function isGet(): bool
     {
-        return $_SERVER['REQUEST_METHOD'] == 'GET';
+        return ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET';
     }
 
-    /*
-     * Запрос произведен методом POST?
+    /**
+     * Проверяет, что запрос сделан методом POST
      */
-    protected function isPost()
+    protected function isPost(): bool
     {
-        return $_SERVER['REQUEST_METHOD'] == 'POST';
+        return ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
     }
 
-    /*
-     * Генерация HTML кода в строку
+    /**
+     * Генерация HTML из шаблона с переменными
+     *
+     * @param string $fileName Путь к файлу шаблона относительно корня проекта
+     * @param array<string, mixed> $vars Переменные для передачи в шаблон
+     *
+     * @return string Сгенерированный HTML
+     *
+     * @throws RuntimeException Если шаблон не найден
      */
-    protected function template($fileName, $vars = array())
+    protected function template(string $fileName, array $vars = []): string
     {
-        // Установка переменных для шаблона.
-        foreach ($vars as $k => $v) {
-            $$k = $v;
+        // Извлекаем переменные в область видимости шаблона
+        extract($vars, EXTR_OVERWRITE);
+
+        // Приводим путь к абсолютному пути относительно текущей директории
+        $templatePath = realpath(__DIR__ . '/../../' . $fileName);
+
+        if ($templatePath === false || !is_file($templatePath)) {
+            throw new RuntimeException("Шаблон не найден: {$fileName}");
         }
 
-        // Генерация HTML в строку.
         ob_start();
-        include $fileName;
-        return ob_get_clean();
+        include $templatePath;
+        return ob_get_clean() ?: '';
     }
 }

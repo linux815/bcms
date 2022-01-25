@@ -1,49 +1,61 @@
 <?php
-/*
- * ViewMain.php - основной класс после new Base()
- */
+
 namespace bcms\classes\ViewMain;
 
-use \bcms\classes\Database\DatabaseModel;
-use \bcms\classes\BaseClass\Base;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\DatabaseModel;
 
-require_once($_SERVER['DOCUMENT_ROOT'].'/bcms/classes/Config/Config.php');
-
-/*
- * Контроллер страницы
- */
 class ViewMain extends Base
 {
-	protected $nameSite = '';
-	protected $dbName   = '';
-	
-	/*
-	 * Виртуальный обработчик запроса
-	 */
-	protected function onInput()
-	{		
-		parent::onInput();
-		
-		// Объявляем экземпляры классов для работы с базой данных
-		$database = new DatabaseModel();		
+    protected string $nameSite = '';
+    protected string $dbName = '';
+    protected array $vars = [];
 
-		// Задаем заголовок для страницы представления
-		$this->title = 'Главная - ' . $this->title;		
+    protected function onInput(): void
+    {
+        parent::onInput();
 
-		// Загружаем настройки cms из базы данных
-		$settings = $database->selectSettings();
-		
-		$this->nameSite = $settings['namesite'];
-		$this->dbName = DBNAME;	
-	}
-	
-	/*
-	 * Виртуальный генератор HTML
-	 */
-	protected function onOutput()
-	{
-		$vars = array('nameSite' => $this->nameSite, 'dbName' => $this->dbName);	
-		$this->content = $this->template('templates/v_view.php', $vars);
-		parent::onOutput();
-	}	
+        $database = new DatabaseModel();
+
+        $this->title = 'Главная - ' . $this->title;
+
+        $settings = $database->selectSettings();
+
+        $this->nameSite = $settings['namesite'] ?? '';
+        $this->dbName = defined('DBNAME') ? DBNAME : '';
+
+        // Получаем статистику для блока "Общая информация"
+        $userCount = $database->countUsers();
+        $pageCount = $database->countPage();
+        $newsCount = $database->countNews();
+        $guestbookCount = $database->countGhost();
+        $reviewCount = $database->countReviews();
+
+        $recycleCount = $this->recycleCount;
+
+        $this->vars = [
+            'settings' => $settings,
+            'userCount' => $userCount,
+            'pageCount' => $pageCount,
+            'newsCount' => $newsCount,
+            'guestbookCount' => $guestbookCount,
+            'reviewCount' => $reviewCount,
+            'recycleCount' => $recycleCount,
+        ];
+    }
+
+    protected function onOutput(): void
+    {
+        $vars = array_merge(
+            [
+                'nameSite' => $this->nameSite,
+                'dbName' => $this->dbName,
+            ],
+            $this->vars,
+        );
+
+        $this->content = $this->template('templates/v_view.php', $vars);
+
+        parent::onOutput();
+    }
 }

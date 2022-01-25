@@ -1,104 +1,65 @@
-<?php
-/**
- * v_findpage.php - шаблон поиска страниц
- * ================
- * $page - массив, содержащий текущую страницу.
- * Содержит в себе элементы: 
- * 	id_page - номер страницы
- *  title - заголовок страницы
- *  text - текст страницы, созданный в редакторе TinyMCE
- *  date - дата последнего изменения/создания страницы
- * ================
- * Пример: echo $page['text'] - выводит текст текущей страницы
- */
-?>
-<h2>Поиск по страницам</h2>
-
-<div class="grid_16">
-    <?php if ($allPage == null) {
-        echo "<p class='error'>Поиск не дал результатов.</p> </div>";
-    } else { ?>  
-    </div>
-
-    <form action="" class="form" method="post">					
-      <table class="table">
-        <tr>
-          <th width="40%">Заголовок</th>
-          <th>Путь</th>
-          <th>Последнее изменение</th>
-          <th>&nbsp;</th>
-        </tr>
-
-        <?php
-        $color = true;
-        foreach ($allPage as $page):
-            if ($color):
-                ?>
-                <tr class="odd">
-                  <td>
-            <?= $page['title'] ?>
-                  </td>
-                  <td>
-                    <a href="/index.php?c=view&id=<?= $page['id_page'] ?>">/index.php?c=view&id=<?= $page['id_page'] ?></a>
-                  </td>
-                  <td>
-            <?= $page['date'] ?>
-                  </td>
-                  <td class="last">
-                    <a href="/index.php?c=view&id=<?= $page['id_page'] ?>"><img src="images/icons/file-find.png" 
-                                                                                width="28px" height="28px" 
-                                                                                alt="Посмотреть страницу на сайте" title="Посмотреть страницу на сайте"/></a>
-                    &nbsp;&nbsp;&nbsp;
-                    <a href="index.php?c=editpage&id=<?= $page['id_page'] ?>"><img src="images/icons/edit-file.png" 
-                                                                                   width="28px" height="28px" 
-                                                                                   alt="Редактировать страницу" title="Редактировать страницу"/></a> 
-                    &nbsp;&nbsp;&nbsp;
-                    <a href="index.php?c=confirm&delete=page&id=<?= $page['id_page'] ?>"><img src="images/icons/delete-file.png" 
-                                                                                              width="28px" height="28px"
-                                                                                              alt="Удалить страницу" title="Удалить страницу"/></a> 
-                  </td>
-                </tr>
-                <?php
-                $color = false;
-            else:
-                ?>
-                <tr class="even">
-                  <td>
-            <?= $page['title'] ?>
-                  </td>
-                  <td>
-                    <a href="/index.php?c=view&id=<?= $page['id_page'] ?>">
-                      /index.php?c=view&id=<?= $page['id_page'] ?>
-                    </a>
-                  </td>
-                  <td>
-            <?= $page['date'] ?>
-                  </td>
-                  <td class="last">
-                    <a href="/index.php?c=view&id=<?= $page['id_page'] ?>"><img src="images/icons/file-find.png"
-                                                                                width="28px" height="28px" 
-                                                                                alt="Посмотреть страницу на сайте" title="Посмотреть страницу на сайте"/></a>
-                    &nbsp;&nbsp;&nbsp;
-                    <a href="index.php?c=editpage&id=<?= $page['id_page'] ?>"><img src="images/icons/edit-file.png" 
-                                                                                   width="28px" height="28px" 
-                                                                                   alt="Редактировать страницу" title="Редактировать страницу"/></a>
-                    &nbsp;&nbsp;&nbsp; 
-                    <a href="index.php?c=confirm&delete=page&id=<?= $page['id_page'] ?>"><img src="images/icons/delete-file.png" 
-                                                                                              width="28px" height="28px" 
-                                                                                              alt="Удалить страницу" title="Удалить страницу"/></a>
-                  </td>
-                </tr>
-                <?php
-                $color = true;
-            endif;
-        endforeach;
-        ?>     	   
-      </table>
-      <div class="actions-bar wat-cf">
-        <div class="pagination">
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Результаты поиска по страницам</h5>
         </div>
-      </div>
-    </form>
-    <?php
-    echo "</div></div>";
-}?>
+        <div class="card-body">
+            <?php
+            if (empty($allPage)): ?>
+                <div class="alert alert-warning mb-0">Поиск не дал результатов.</div>
+            <?php
+            else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0 bg-white shadow-sm rounded">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 40%;">Заголовок</th>
+                            <th>Путь</th>
+                            <th>Дата</th>
+                            <th class="text-center">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        foreach ($allPage as $page): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($page['title']) ?></td>
+                                <td>
+                                    <a href="/index.php?c=view&amp;id=<?= (int)$page['id_page'] ?>"
+                                       class="text-decoration-none" target="_blank">
+                                        /index.php?c=view&amp;id=<?= (int)$page['id_page'] ?>
+                                    </a>
+                                </td>
+                                <td><?= htmlspecialchars($page['date']) ?></td>
+                                <td class="text-center">
+                                    <a href="/index.php?c=view&amp;id=<?= (int)$page['id_page'] ?>" target="_blank"
+                                       title="Посмотреть страницу" class="action-btn me-1"
+                                       aria-label="Посмотреть страницу">
+                                        <img src="images/icons/file-find.png" alt="Посмотреть"/>
+                                    </a>
+                                    <a href="index.php?c=editpage&amp;id=<?= (int)$page['id_page'] ?>"
+                                       title="Редактировать страницу" class="action-btn me-1"
+                                       aria-label="Редактировать">
+                                        <img src="images/icons/edit-file.png" alt="Редактировать"/>
+                                    </a>
+                                    <?php
+                                    if ((int)$page['id_page'] !== 1): ?>
+                                        <a href="index.php?c=confirm&amp;delete=page&amp;id=<?= (int)$page['id_page'] ?>"
+                                           title="Удалить страницу"
+                                           class="action-btn text-danger" aria-label="Удалить">
+                                            <img src="images/icons/delete-file.png" alt="Удалить"/>
+                                        </a>
+                                    <?php
+                                    endif; ?>
+                                </td>
+                            </tr>
+                        <?php
+                        endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php
+            endif; ?>
+        </div>
+    </div>
+</div>

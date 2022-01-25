@@ -1,18 +1,19 @@
 <hr/>
+
 <?php
-foreach ($allNews as $news):
-?>
-<p align="center"><b><?= $news['date'] ?></b></p>
-<p align="center"><b><?= $news['title'] ?></b></p>
-<?= $news['text'] ?>
-<br/><br/>
+foreach ($allNews as $news): ?>
+    <p class="text-center fw-bold"><?= htmlspecialchars($news['date']) ?></p>
+    <p class="text-center fw-bold"><?= htmlspecialchars($news['title']) ?></p>
+    <div><?= $news['text'] ?></div>
+    <br/><br/>
 <?php
-endforeach;
-?>     	   
-</table>
-<p align="center">
-    <?php if (isset($_GET['all'])): echo ""; else: ?>
-    <a href="index.php?c=view&id=<?php echo $_GET['id']?>&all">Все новости</a>
-    <?php endif; ?>
+endforeach; ?>
+
+<p class="text-center">
+    <?php
+    if (empty($_GET['all'])): ?>
+        <a href="index.php?c=view&id=<?= urlencode($_GET['id'] ?? '') ?>&all">Все новости</a>
+    <?php
+    endif; ?>
 </p>
 <br/>

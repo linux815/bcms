@@ -1,71 +1,74 @@
 <?php
-/*
- * BaseSecond.php - вторичный базовый класс (используется в основном для модулей)
- */
-namespace classes\BaseClass;
 
-use \classes\Controller\Controller;
-use \bcms\classes\Database\UserModel;
-use \bcms\classes\Database\DatabaseModel;
+namespace Classes\BaseClass;
 
-/*
- * Базовый контроллер сайта
+use App\Helpers\ViteAssets;
+use bcms\classes\Database\DatabaseModel;
+use bcms\classes\Database\UserModel;
+use Classes\Controller\Controller;
+
+/**
+ * Вторичный базовый класс (используется для модулей)
  */
 abstract class BaseSecond extends Controller
 {
+    protected string $title = '';
+    protected string $content = '';
+    protected array $settings = [];
+    protected ?array $user;
 
-    protected $title; // заголовок страницы
-    protected $content; // содержание страницы
-    protected $settings; // настройки cms
-    protected $user; // текущий пользователь
-
-    /*
-     * Контроллер
+    /**
+     * Конструктор
      */
-    function __construct()
+    public function __construct()
     {
-        if (!isset($_SESSION)) {
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
     }
 
-    /*
-     * Виртуальный обработчик
+    /**
+     * Виртуальный обработчик запроса
      */
-    protected function onInput()
+    protected function onInput(): void
     {
-        // Объявляем экземпляры классов для работы с базой данных
         $database = new DatabaseModel();
 
-        // Основной заголовок страницы
-        $this->title = 'MaxiCMS';
-        // Содержание страницы
+        $this->title = 'bCMS';
         $this->content = '';
 
-        $mUsers = UserModel::Instance();
+        $userModel = UserModel::Instance();
 
-        // Очистка старых сессий.
-        $mUsers->ClearSessions();
+        // Очистка старых сессий
+        $userModel->clearSessions();
 
-        // Текущий пользователь.
-        $this->user = $mUsers->Get();
+        // Текущий пользователь
+        $this->user = $userModel->get();
 
-        // Загружаем настройки cms из базы данных
+        // Загружаем настройки CMS
         $this->settings = $database->selectSettings();
     }
 
-    /*
+    /**
      * Виртуальный генератор HTML
      */
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array(
+        $viteAssets = new ViteAssets(
+            __DIR__ . '/../../public/assets/manifest.json',
+        );
+
+        $vars = [
             'title' => $this->title,
             'content' => $this->content,
             'user' => $this->user,
-            'settings' => $this->settings
-        );
-        $page = $this->template('templates/' . $this->settings['template'] . '/v_mainSecond.php', $vars);
+            'settings' => $this->settings,
+            'viteAssets' => $viteAssets,
+        ];
+
+        $templatePath = 'templates/' . ($this->settings['template'] ?? 'default') . '/v_mainSecond.php';
+        $page = $this->template($templatePath, $vars);
+
         echo $page;
     }
 }

@@ -1,94 +1,113 @@
+<h1 class="mb-4">Настройки</h1>
+
 <?php
-/**
- * v_settings.php - шаблон страницы настроек MaxiCMS
- * ================
- *  $mUsers - отвечает за отображения пункта меню пользователи (0 выключен, 1 включен)
- *  $mdGhost - модуль гостевая книга(0 выключен, 1 включен)
- *  $mdReview - модуль обратная связь: 
-  Значения, которые может принять переменная:
-  email - отправка на email, который указан в настройках MaxiCMS
-  admin - отправка отзывов в администраторский раздел
- */
-?>
-<style type="text/css">
-  .tooltip {
-      border-bottom: 1px dotted #000000; color: #000000; outline: none;
-      cursor: help; text-decoration: none;
-      position: relative;
-  }
-  .tooltip span {
-      margin-left: -999em;
-      position: absolute;
-  }
-  .tooltip:hover span {
-      border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
-      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
-      font-family: Calibri, Tahoma, Geneva, sans-serif;
-      position: absolute; left: 1em; top: 2em; z-index: 99;
-      margin-left: 0; width: 250px;
-  }
-  .tooltip:hover img {
-      border: 0; margin: -10px 0 0 -55px;
-      float: left; position: absolute;
-  }
-  .tooltip:hover em {
-      font-family: Candara, Tahoma, Geneva, sans-serif; font-size: 1.2em; font-weight: bold;
-      display: block; padding: 0.2em 0 0.6em 0;
-  }
-  .classic { padding: 0.8em 1em; }
-  .custom { padding: 0.5em 0.8em 0.8em 2em; }
-  * html a:hover { background: transparent; }
-  .classic {background: #e2f3f9; border: 1px solid #FFAD33; }
-  .critical { background: #FFCCAA; border: 1px solid #FF3334;	}
-  .help { background: #e2f3f9; border: 1px solid #2BB0D7;	}
-  .info { background: #9FDAEE; border: 1px solid #2BB0D7;	}
-  .warning { background: #FFFFAA; border: 1px solid #FFAD33; }
-</style>
-<h1>Настройки</h1>
-<form method="post" action="#">
-  <p>
-    <label for="namesite">Название сайта</label>
-    <input type="input" id="namesite" name="namesite" size="40" value="<?php echo $nameSite; ?>">
-  </p>
-  <p>
-    <label for="template" style="float: left;">Имя шаблона</label> &nbsp;
-    <a class="tooltip" href="#">помощь<span class="custom help"><img src="images/icons/Help.png" alt="Помощь" height="48" width="48" /><em>Знаете ли вы что?</em>По умолчанию доступны шаблоны: default</span></a>
-  </p>
-  <p>
-    <input type="input" id="template" name="template" size="40" value="<?php echo $template; ?>">
-  </p>
-    <input type="checkbox" name="menu" value="users" <?php if ($m_users == 1): ?> checked <?php endif; ?>>Отображать пункт меню "Пользователи"
-    <br/>
-  </p>
-  <p>
-    <b>Модуль "Обратная связь"</b>
-  </p>
-  <p>
-    <input type="radio" name="review" value="email" <?php if ($md_review == "email"): ?> checked <?php endif; ?>>Отправлять данные на Ваш email
-    <br/>
-    <input type="radio" name="review" value="admin" <?php if ($md_review == "admin"): ?> checked <?php endif; ?>>Отправлять данные в администраторский раздел
-    <br/>
-  </p>
-  <p>
-    <b>SEO</b>
-  </p>
-  <p>
-    <label for="keywords" style="float: left;">Ключевые слова</label> &nbsp;
-    <a class="tooltip" href="#">помощь<span class="custom help"><img src="images/icons/Help.png" alt="Помощь" height="48" width="48" /><em>Знаете ли вы что?</em>Ключевые слова нужно вводить через запятые, либо через пробелы. <br> Пример: еда, горох, хлеб</span></a>
-  </p>
-  <p>
-    <input type="input" id="keywords" name="keywords" size="40" value="<?php echo $keywords; ?>">
-  </p>
-  <p>
-    <label for="description">Краткое описание сайта</label>
-    <input type="input" id="namesite" name="description" size="40" value="<?php echo $description; ?>">
-  </p>
-  <p>
-  <p>
-    <input type="submit" value="Сохранить" name="save">
-  </p>
-  <hr/>
-  <p>
-    Полная версия bcms: <?php echo $version; ?>
-  </p>
+if (!empty($success)): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        Настройки успешно сохранены.
+        <a href="index.php" class="alert-link ms-2">Перейти на главную</a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+    </div>
+<?php
+endif; ?>
+
+<form method="post" action="#" class="needs-validation" novalidate>
+
+    <!-- Общие настройки -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">Общие настройки</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="namesite" class="form-label">Название сайта</label>
+                <input type="text" class="form-control" id="namesite" name="namesite"
+                       value="<?= htmlspecialchars($nameSite) ?>" required>
+                <div class="invalid-feedback">Пожалуйста, введите название сайта.</div>
+            </div>
+
+            <div class="mb-3 d-flex align-items-center">
+                <label for="template" class="form-label me-2 mb-0">Имя шаблона</label>
+                <a href="#" tabindex="0" role="button" data-bs-toggle="tooltip" data-bs-placement="right"
+                   title="По умолчанию доступны шаблоны: default">
+                    <img src="images/icons/Help.png" alt="Помощь" width="24" height="24">
+                </a>
+            </div>
+            <input type="text" class="form-control mb-3" id="template" name="template"
+                   value="<?= htmlspecialchars($template) ?>" required>
+            <div class="invalid-feedback">Пожалуйста, введите имя шаблона.</div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="menuUsers" name="menu"
+                       value="users" <?= ($m_users == 1) ? 'checked' : '' ?>>
+                <label class="form-check-label" for="menuUsers">Отображать пункт меню "Пользователи"</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модуль обратной связи -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">Модуль "Обратная связь"</h5>
+        </div>
+        <div class="card-body">
+            <fieldset class="mb-0">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="review" id="reviewEmail"
+                           value="email" <?= ($md_review === "email") ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="reviewEmail">Отправлять данные на Ваш email</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="review" id="reviewAdmin"
+                           value="admin" <?= ($md_review === "admin") ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="reviewAdmin">Отправлять данные в администраторский
+                        раздел</label>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <!-- SEO настройки -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">SEO</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3 d-flex align-items-center">
+                <label for="keywords" class="form-label me-2 mb-0">Ключевые слова</label>
+                <a href="#" tabindex="0" role="button" data-bs-toggle="tooltip" data-bs-placement="right"
+                   title="Ключевые слова нужно вводить через запятые или пробелы. Например: еда, горох, хлеб">
+                    <img src="images/icons/Help.png" alt="Помощь" width="24" height="24">
+                </a>
+            </div>
+            <input type="text" class="form-control mb-3" id="keywords" name="keywords"
+                   value="<?= htmlspecialchars($keywords) ?>">
+
+            <label for="description" class="form-label">Краткое описание сайта</label>
+            <input type="text" class="form-control" id="description" name="description"
+                   value="<?= htmlspecialchars($description) ?>">
+        </div>
+    </div>
+
+    <button type="submit" name="save" class="btn btn-primary mb-4">Сохранить</button>
+
+    <div>
+        <small class="text-muted">Полная версия bCMS: <strong><?= htmlspecialchars($version) ?></strong></small>
+    </div>
 </form>
+
+<script>
+    // Bootstrap форма валидация
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>

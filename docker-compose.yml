@@ -1,34 +1,44 @@
-version: '3.1'
 services:
-  php:
-    image: 8.0.12-fpm
-    container_name: bcms-php-fpm
+  app:
     build:
       context: .
-      dockerfile: ./docker/fpm.Dockerfile
+      dockerfile: docker/Dockerfile
+    container_name: bcms-app
     volumes:
-        - .:/usr/share/nginx/html
-    links:
-        - mysql
-  web:
-    image: nginx:latest
-    container_name: bcms-nginx
+      - ./:/app
+      - ./docker/Caddyfile:/etc/frankenphp/Caddyfile
+      - ./docker/logs:/var/log/caddy
     ports:
-        - "8084:80"
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "443:443/udp"# HTTP/3
+      - "5173:5173"  # Vite dev server
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - db
+    tty: true
+  node:
+    image: node:22
+    working_dir: /app
     volumes:
-        - .:/usr/share/nginx/html
-        - ./docker/site.conf:/etc/nginx/conf.d/site.conf
-    links:
-        - php
-  mysql:
-    image: mariadb
-    container_name: bcms-db
+      - ./:/app
     ports:
-        - 3306:3306
-    expose:
-        - 3306
-    volumes:
-        - ./docker/data:/var/lib/mysql:rw
+      - "5173:5173"
+  db:
+    image: mysql:8.0
+    container_name: bcms-mysql
+    restart: unless-stopped
     environment:
-        - MYSQL_DATABASE=bcms
-        - MYSQL_ROOT_PASSWORD=secret
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql_data:

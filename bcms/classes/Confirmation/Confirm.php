@@ -1,85 +1,75 @@
 <?php
 /*
- * Confirm.php - класс для подтверждения чего-либо
+ * Confirm.php — класс для подтверждения удаления
  */
+
 namespace bcms\classes\Confirmation;
 
-use \bcms\classes\BaseClass\Base;
+use bcms\classes\BaseClass\Base;
 
-class Confirm extends Base 
+class Confirm extends Base
 {
-    private $char = '';
+    private string $char = '';
+    private ?string $delete = null;
+    private ?int $id = null;
 
-    //
-    // Виртуальный обработчик запроса.
-    //
-    protected function onInput() 
+    protected function onInput(): void
     {
         parent::onInput();
 
-        // Задаем заголовок для страницы представления
         $this->title = 'Подтверждение - ' . $this->title;
 
-        $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $delete = filter_input(INPUT_GET, 'delete', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $this->delete = filter_input(INPUT_GET, 'delete', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $this->id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
-        switch ($delete) {
-            case 'users':
-                $this->char = "Вы действительно хотите удалить данного пользователя?";
-                break;
-            case 'page':
-                $this->char = "Вы действительно хотите удалить данную страницу?";
-                break;
-            case 'news':
-                $this->char = "Вы действительно хотите удалить данную новость?";
-                break;
-            default:
-                header('Location: index.php');
-        }
-        
-        $buttonYes = filter_input(INPUT_POST, 'Yes', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $buttonNo  = filter_input(INPUT_POST, 'No', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (isset($buttonYes)) {
-            switch ($delete) {
-                case 'users':
-                    header('Location: index.php?c=delete&delete=users&id=' . $id);
-                    break;
-                case 'page':
-                    header('Location: index.php?c=delete&delete=page&id=' . $id);
-                    break;
-                case 'news':
-                    header('Location: index.php?c=delete&delete=news&id=' . $id);
-                    break;
-                default:
-                    header('Location: index.php');
-            }
+        if (!$this->delete || !$this->id) {
+            $this->redirectToHome();
         }
 
-        if (isset($buttonNo)) {
-            switch ($delete) {
-                case 'users':
-                    header('Location: index.php?c=users');
-                    break;
-                case 'page':
-                    header('Location: index.php?c=page');
-                    break;
-                case 'news':
-                    header('Location: index.php?c=news');
-                    break;
-                default:
-                    header('Location: index.php');
-            }
+        $this->char = match ($this->delete) {
+            'users' => "Вы действительно хотите удалить данного пользователя?",
+            'page' => "Вы действительно хотите удалить данную страницу?",
+            'news' => "Вы действительно хотите удалить данную новость?",
+            default => $this->redirectToHome()
+        };
+
+        // Обработка подтверждения
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->handlePost();
         }
     }
 
-    //
-    // Виртуальный генератор HTML.
-    //	
-    protected function onOutput() 
+    private function redirectToHome(): void
     {
-        $vars = array('char' => $this->char);
-        $this->content = $this->template('templates/v_confirm.php', $vars);
+        $this->redirect('index.php');
+    }
+
+    private function redirect(string $url): void
+    {
+        header("Location: {$url}");
+        exit;
+    }
+
+    private function handlePost(): void
+    {
+        if (isset($_POST['Yes'])) {
+            $this->redirect("index.php?c=delete&delete={$this->delete}&id={$this->id}");
+        }
+
+        if (isset($_POST['No'])) {
+            $target = match ($this->delete) {
+                'users' => 'users',
+                'page' => 'page',
+                'news' => 'news',
+                default => ''
+            };
+            $this->redirect("index.php?c={$target}");
+        }
+    }
+
+    protected function onOutput(): void
+    {
+        $this->content = $this->template('templates/v_confirm.php', ['char' => $this->char]);
         parent::onOutput();
     }
 }

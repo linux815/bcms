@@ -1,70 +1,58 @@
 <?php
-/*
- * ViewMain.php - основной класс после new Base()
- */
-namespace classes\ViewMain;
 
-use \bcms\classes\Database\DatabaseModel;
-use \classes\BaseClass\Base;
+namespace Classes\ViewMain;
 
-/*
- * Контроллер страницы чтения
- */
+use bcms\classes\Database\DatabaseModel;
+use Classes\BaseClass\Base;
 
 class ViewMain extends Base
 {
-    protected $nameSite; // Название сайта
-    protected $dbName; // Имя базы данных
-    protected $content; // содержание страницы
-    protected $settings; // настройки cms
+    protected ?string $nameSite = null;
+    protected ?string $dbName = null;
+    protected ?array $pageData = null;
+    protected array $settings = [];
 
-    /*
-     * Конструктор
-     */
-    function __construct()
+    public function __construct()
     {
-        if (!isset($_SESSION)) {
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+        parent::__construct();
     }
 
-    /*
-     * Виртуальный обработчик запроса
-     */
-
-    protected function onInput()
+    protected function onInput(): void
     {
         parent::onInput();
 
-        // Объявляем экземпляры классов для работы с базой данных
         $database = new DatabaseModel();
 
-        // $this->title = 'Главная - ' . $this->title;		
-        // Загружаем настройки cms из базы данных
-        $settings = $database->selectSettings();
+        $this->settings = $database->selectSettings();
 
         $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-        if (!isset($id)) {
+        if ($id === null) {
             header('Location: index.php?c=view&id=1');
+            exit;
         }
-        $this->content = $database->selectPageId($id);
-        $this->title = $this->content['title'] . ' - Новоозерновская основная общеобразовательная школа';
+
+        $this->pageData = $database->selectPageId($id);
+        $this->title = ($this->pageData['title'] ?? 'Без названия') . ' - Сайт школы';
     }
 
-    /*
-     * Виртуальный генератор HTML
-     */
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array(
+        $vars = [
             'title' => $this->title,
             'nameSite' => $this->nameSite,
             'dbName' => $this->dbName,
-            'content' => $this->content,
-            'settings' => $this->settings
+            'content' => $this->pageData,
+            'settings' => $this->settings,
+        ];
+
+        $this->content = $this->template(
+            'templates/' . ($this->settings['template'] ?? 'default') . '/v_view.php',
+            $vars,
         );
-        $this->content = $this->template('templates/' . $this->settings['template'] . '/v_view.php', $vars);
         parent::onOutput();
     }
 }

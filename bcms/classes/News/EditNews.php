@@ -1,70 +1,64 @@
 <?php
 /*
- * EditNews.php - редактирование новости
- */ 
+ * EditNews.php — редактирование новости
+ */
+
 namespace bcms\classes\News;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\NewsModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\NewsModel;
 
 class EditNews extends Base
 {
-	private $error, $news;
-	
-	//
-	// Конструктор.
-	//
-	function __construct()
-	{		
-	}
-	
-	//
-	// Виртуальный обработчик запроса.
-	//
-	protected function onInput()
-	{
-		parent::onInput();
-		
-		// Объявляем экземпляры классов для работы с базой данных		
-		$database = new NewsModel();
+    private ?string $error = null;
+    private array $news = [];
 
-		// Задаем заголовок для страницы представления		
-		$this->title = 'Редактирование новости - ' . $this->title;	
+    protected function onInput(): void
+    {
+        parent::onInput();
 
-        $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-		if (!isset($id)) {
-			header('Location: index.php?c=news');
-		} else {	
-			$id = trim($id);
-		}
-		
-		$this->news = $database->selectNewsId($id)->fetch();
-		
-		if ($this->isPost())
-		{
-			$title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-			if ($title == "")
-			{
-				$this->error = "Введите заголовок.";
-			}
-			else {
-				$this->error = "";
-				$text = $_POST['content'];
-				$html = 0;
-				$database->newsUpdate($id, $title, $text);
-				header('Location: index.php?c=news');
-			}
-		}
-	}
-	
-	//
-	// Виртуальный генератор HTML.
-	//	
-	protected function onOutput()
-	{
-		$vars = array('error' => $this->error, 'news' => $this->news);	
-		$this->content = $this->template('templates/v_editnews.php', $vars);
-		parent::onOutput();
-	}		
+        $database = new NewsModel();
+        $this->title = 'Редактирование новости - ' . $this->title;
+
+        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+        if (!$id) {
+            header('Location: index.php?c=news');
+            exit;
+        }
+
+        $newsData = $database->selectNewsId($id);
+
+        if (!is_array($newsData) || empty($newsData)) {
+            $this->error = "Новость не найдена.";
+            return;
+        }
+
+        $this->news = $newsData;
+
+        if ($this->isPost()) {
+            $title = trim(filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+            $text = $_POST['content'] ?? '';
+
+            if (empty($title)) {
+                $this->error = "Введите заголовок.";
+                return;
+            }
+
+            $database->newsUpdate($id, $title, $text);
+            header('Location: index.php?c=news');
+            exit;
+        }
+    }
+
+    protected function onOutput(): void
+    {
+        $vars = [
+            'error' => $this->error,
+            'news' => $this->news,
+        ];
+
+        $this->content = $this->template('templates/v_editnews.php', $vars);
+        parent::onOutput();
+    }
 }

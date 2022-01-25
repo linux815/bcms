@@ -1,59 +1,48 @@
-<?php 
-/*
- * BaseSecond.php - вторичный (основной) класс с пустым шаблоном (используется для модулей в основном)
- */
+<?php
+
 namespace bcms\classes\BaseClass;
 
-use \bcms\classes\Controller\Controller;
-use \bcms\classes\Database\UserModel;
+use App\Helpers\ViteAssets;
+use bcms\classes\Controller\Controller;
+use bcms\classes\Database\UserModel;
 
-/*
- * Базовый контроллер сайта в котором содержится пустой шаблон
- */
 abstract class BaseSecond extends Controller
 {
-    protected $title; // заголовок страницы
-    protected $content; // содержание страницы
+    protected string $title = 'bCMS';
+    protected string $content = '';
+    protected array $user = [];
 
-    /*
-     * Контроллер
-     */
-    function __construct()
+    public function __construct()
     {
-        if (!isset($_SESSION)) {
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
-        }		
+        }
     }
 
-    /*
-     * Виртуальный обработчик
-     */
-    protected function onInput()
+    protected function onInput(): void
     {
-        $this->title = 'bCMS';
-        $this->content = '';
+        $userModel = UserModel::Instance();
 
-        // Объявляем экземпляры классов для работы с базой данных
-        $mUsers = UserModel::Instance();
+        // Очистка устаревших сессий
+        $userModel->ClearSessions();
 
-        // Очистка старых сессий.
-        $mUsers->ClearSessions();
-
-        // Текущий пользователь.
-        $this->user = $mUsers->Get();
+        // Получение текущего пользователя
+        $this->user = $userModel->Get() ?? [];
     }
 
-    /*
-     * Виртуальный генератор HTML
-     */
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array(
-            'title' => $this->title, 
-            'content' => $this->content, 
-            'user' => $this->user
-        );	
-        $page = $this->template('templates/v_mainSecond.php', $vars);				
-        echo $page;
-    }	
+        $viteAssets = new ViteAssets(
+            __DIR__ . '/../../../public/assets/manifest.json',
+        );
+
+        $vars = [
+            'title' => $this->title,
+            'content' => $this->content,
+            'user' => $this->user,
+            'viteAssets' => $viteAssets,
+        ];
+
+        echo $this->template('templates/v_mainSecond.php', $vars);
+    }
 }
