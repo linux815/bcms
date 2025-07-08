@@ -43,11 +43,23 @@
             <div class="card welcome-card h-100">
                 <h3>Добро пожаловать</h3>
                 <ol class="welcome-list">
-                    <li><a href="https://github.com/linux815/bcms" target="_blank" rel="noopener noreferrer">Страница
-                            проекта (Github)</a></li>
-                    <li><a href="https://github.com/linux815/bcms/changelog" target="_blank" rel="noopener noreferrer">История
-                            изменений</a></li>
-                    <li><a href="mailto:ivan.bazhenov@gmail.com?subject=Вопрос по bCMS">Написать письмо</a></li>
+                    <li>
+
+                        <a href="https://github.com/linux815/bcms" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-github"></i>&nbsp; Страница проекта (Github)
+                        </a>
+                    </li>
+                    <li>
+
+                        <a href="https://github.com/linux815/bcms/releases" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-clock-history"></i>&nbsp; История изменений
+                        </a>
+                    </li>
+                    <li>
+                        <a href="mailto:ivan.bazhenov@gmail.com?subject=Вопрос по bCMS">
+                            <i class="bi bi-envelope-fill"></i>&nbsp; Написать письмо
+                        </a>
+                    </li>
                 </ol>
             </div>
         </div>
