@@ -34,6 +34,15 @@
             </tr>
             </thead>
             <tbody>
+            <?php if (empty($recycle)): ?>
+                <tr>
+                    <td colspan="6">
+                        <div class="alert alert-light text-center mb-0" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>Нет удалённых новостей для отображения.
+                        </div>
+                    </td>
+                </tr>
+            <?php else: ?>
             <?php
             foreach ($recycle as $news): ?>
                 <tr>
@@ -58,10 +67,12 @@
                 </tr>
             <?php
             endforeach; ?>
+            <?php endif; ?>
             </tbody>
         </table>
 
-        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <?php if (!empty($recycle)): ?>
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
             <button type="submit" name="del" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
                 <i class="bi bi-recycle"></i> Восстановить выбранное
             </button>
@@ -112,5 +123,6 @@
                 </ul>
             </nav>
         </div>
+        <?php endif; ?>
     </form>
 </div>
