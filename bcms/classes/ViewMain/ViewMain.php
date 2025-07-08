@@ -25,9 +25,9 @@ class ViewMain extends Base
         $this->dbName = defined('DBNAME') ? DBNAME : '';
 
         // Получаем статистику для блока "Общая информация"
-        $userCount = $database->countUsers();
-        $pageCount = $database->countPage();
-        $newsCount = $database->countNews();
+        $userCount = $database->countUsers()['count'] ?? 0;
+        $pageCount = $database->countPage()['count'] ?? 0;
+        $newsCount = $database->countNews()['count'] ?? 0;
         $guestbookCount = $database->countGhost();
         $reviewCount = $database->countReviews();
 

@@ -184,18 +184,24 @@ class DatabaseModel
         }
     }
 
-    public function countUsers(): int
+    public function countUsers(): array|string
     {
-        $sql = 'SELECT COUNT(*) as count FROM users';
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = "SELECT COUNT(*) AS count FROM users WHERE users.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
-    public function countNews(): int
+    public function countNews(): array|string
     {
-        $sql = 'SELECT COUNT(*) as count FROM news WHERE `delete` = 0';
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = "SELECT COUNT(*) AS count FROM news WHERE news.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
     public function countGhost(): int
