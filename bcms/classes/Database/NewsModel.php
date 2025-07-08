@@ -1,122 +1,121 @@
-<?php namespace bcms\classes\Database;
+<?php
 
-use \PDO;
-use \PDOException;
+namespace bcms\classes\Database;
 
-require($_SERVER['DOCUMENT_ROOT'].'/bcms/classes/Config/Config.php');
+use PDO;
+use PDOException;
+
+require_once __DIR__ . '/../Config/Config.php';
 
 class NewsModel
 {
+    private ?PDO $dbh = null;
+
     public function __construct()
     {
-        
+        try {
+            $this->dbh = new PDO(
+                "mysql:host=" . HOSTNAME . ";dbname=" . DBNAME,
+                USERNAME,
+                PASSWORD,
+                [
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ],
+            );
+        } catch (PDOException $e) {
+            die('Connection failed: ' . $e->getMessage());
+        }
     }
 
-    public function selectNewsId($id)
+    public function selectNewsId(int $id): array|string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT *, DATE_FORMAT(date,'%d.%m.%Y') as date FROM news WHERE id_news='$id'";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL;
+            $sql = "SELECT *, DATE_FORMAT(date, '%d.%m.%Y') AS date FROM news WHERE id_news = :id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function selectAllNews($start, $num)
+    public function selectAllNews(int $start, int $num): array|string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT *, DATE_FORMAT(date,'%d.%m.%Y') as date FROM news WHERE news.delete = 0 ORDER BY id_news DESC LIMIT $start, $num";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL;
+            $sql = "SELECT *, DATE_FORMAT(date, '%d.%m.%Y') AS date 
+                    FROM news 
+                    WHERE news.delete = 0 
+                    ORDER BY id_news DESC 
+                    LIMIT :start, :num";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':start', $start, PDO::PARAM_INT);
+            $stmt->bindValue(':num', $num, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function addNews($title, $text)
+    public function addNews(string $title, string $text): ?string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $date = date('Y-m-d H:i:s');
-
-            $sql = "INSERT INTO `news` (`id_news`, `title`, `text`, `date`, `delete`) VALUES (NULL, :title, :text, :date, '0');";
-            $q = $dbh->prepare($sql);
-            $q->execute(array(':title' => $title,
+            $sql = "INSERT INTO news (title, text, date, `delete`) 
+                    VALUES (:title, :text, :date, 0)";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':title' => $title,
                 ':text' => $text,
-                ':date' => $date));
-
-            $dbh = NULL;
+                ':date' => date('Y-m-d H:i:s'),
+            ]);
+            return null;
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function newsUpdate($id, $title, $text)
+    public function newsUpdate(int $id, string $title, string $text): ?string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $date = date('Y-m-d H:i:s');
-
-            $sql = "UPDATE news
-	        SET title=?,text=?,date=?
-	        WHERE id_news=?";
-
-            $q = $dbh->prepare($sql);
-            $q->execute(array($title, $text, $date, $id));
-
-            $dbh = NULL;
+            $sql = "UPDATE news SET title = :title, text = :text, date = :date WHERE id_news = :id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':title' => $title,
+                ':text' => $text,
+                ':date' => date('Y-m-d H:i:s'),
+                ':id' => $id,
+            ]);
+            return null;
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function deleteNews($id)
+    public function deleteNews(int $id): ?string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD);
-
-            $sql = "UPDATE news
-	        SET news.delete=1
-	        WHERE id_news=?";
-
-            $q = $dbh->prepare($sql);
-            $q->execute(array($id));
-
-            $dbh = NULL; // Закрываем соединение
+            $sql = "UPDATE news SET news.delete = 1 WHERE id_news = :id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            return null;
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function сountNews()
+    public function countNews(): array|string
     {
         try {
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT COUNT(*) as count FROM news where news.delete = 0 ORDER BY id_news ASC";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL; // Закрываем соединение
+            $sql = "SELECT COUNT(*) AS count FROM news WHERE news.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
+    public function __destruct()
+    {
+        $this->dbh = null;
+    }
 }

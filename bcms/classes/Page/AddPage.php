@@ -1,54 +1,48 @@
 <?php
 /*
- * AddPage.php - добавление страницы
+ * AddPage.php — добавление новой страницы
  */
+
 namespace bcms\classes\Page;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\DatabaseModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\DatabaseModel;
 
 class AddPage extends Base
 {
+    private ?string $error = null;
 
-    private $error;
-
-    //
-    // Виртуальный обработчик запроса.
-    //
-	protected function onInput()
+    protected function onInput(): void
     {
         parent::onInput();
 
-        // Объявляем экземпляры классов для работы с базой данных		
-        $database = new DatabaseModel();
-
-        // Задаем заголовок для страницы представления		
         $this->title = 'Создание новой страницы - ' . $this->title;
 
-        // Проверка на нажатие кнопки
-        if ($this->isPost()) {
-            $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            if ($title == "") {
-                $this->error = "Введите название страницы.";
-            } else {
-                $hide = filter_input(INPUT_POST, 'hide', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-                $this->error = "";
-                $title = trim($title);
-                $hide = trim($hide);
-                $database->addPage($title, $hide);
-                header('Location: index.php?c=page');
-            }
+        if (!$this->isPost()) {
+            return;
         }
+
+        $title = trim((string)filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+        $hide = (int)filter_input(INPUT_POST, 'hide', FILTER_VALIDATE_INT);
+
+        if ($title === '') {
+            $this->error = 'Введите название страницы.';
+            return;
+        }
+
+        $database = new DatabaseModel();
+        $database->addPage($title, $hide);
+
+        header('Location: index.php?c=page');
+        exit;
     }
 
-    //
-    // Виртуальный генератор HTML.
-    //	
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array('error' => $this->error);
-        $this->content = $this->template('templates/v_addpage.php', $vars);
+        $this->content = $this->template('templates/v_addpage.php', [
+            'error' => $this->error,
+        ]);
+
         parent::onOutput();
     }
-
 }

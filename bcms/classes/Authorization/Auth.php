@@ -1,70 +1,55 @@
 <?php
-/*
- * Auth.php - авторизация
- */
+
 namespace bcms\classes\Authorization;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\UserModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\UserModel;
 
-/*
- * Контроллер страницы авторизации
- */
 class Auth extends Base
 {
-    private $error; // сообщение об ошибке
+    private ?int $error = null;
 
-    /*
-     * Виртуальный обработчик запроса
-     */
-    protected function onInput()
+    protected function onInput(): void
     {
         parent::onInput();
 
-        // Задаем заголовок для страницы представления
         $this->title = 'Авторизация - ' . $this->title;
 
-        // Менеджеры.
-        $mUsers = UserModel::Instance();
-        
-        // Очистка старых сессий.
-        $mUsers->ClearSessions();
-        
-        // Текущий пользователь.
-        $this->user = $mUsers->Get();
+        $userModel = UserModel::Instance();
 
-        if ($this->user[0] != "") {
-            // Выход.
-            $mUsers->Logout();
+        // Очистка устаревших сессий
+        $userModel->ClearSessions();
+
+        // Получаем текущего пользователя
+        $this->user = $userModel->Get() ?? [];
+
+        // Если пользователь уже вошёл — выполняем выход
+        if (!empty($this->user)) {
+            $userModel->Logout();
             header('Location: index.php?c=auth');
-            die();
+            exit;
         }
 
-        // Выход.
-        $mUsers->Logout();
-        
-        // Обработка отправки формы.
-        if (parent::isPost()) { 
-            if ($mUsers->Login(
-                    filter_input(INPUT_POST, 'login', FILTER_SANITIZE_FULL_SPECIAL_CHARS), 
-                    trim($_POST['password']), 
-                    isset($_POST['remember'])
-            )) {
+        // Обработка отправки формы
+        if ($this->isPost()) {
+            $login = filter_input(INPUT_POST, 'login', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $password = trim($_POST['password'] ?? '');
+            $remember = isset($_POST['remember']);
+            if ($userModel->Login($login, $password, $remember)) {
                 header('Location: index.php');
-                die();
-            } else {
-                $this->error = 1;
+                exit;
             }
+
+            $this->error = 1;
         }
     }
 
-    /*
-     * Виртуальный генератор HTML
-     */
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array('error' => $this->error);
-        $this->content = $this->template('templates/v_login.php', $vars);
+        $this->content = $this->template('templates/v_login.php', [
+            'error' => $this->error,
+        ]);
+
         parent::onOutput();
     }
 }

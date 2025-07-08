@@ -1,64 +1,62 @@
 <?php
 /*
- * EditPage.php - редактирование страницы
+ * EditPage.php — редактирование страницы
  */
+
 namespace bcms\classes\Page;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\DatabaseModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\DatabaseModel;
 
 class EditPage extends Base
 {
+    private ?string $error = null;
+    private ?array $page = null;
 
-    private $error, $page;
-
-    //
-    // Виртуальный обработчик запроса.
-    //
-	protected function onInput()
+    protected function onInput(): void
     {
         parent::onInput();
 
-        // Объявляем экземпляры классов для работы с базой данных		
+        $this->title = 'Редактирование страницы - ' . $this->title;
         $database = new DatabaseModel();
 
-        // Задаем заголовок для страницы представления	
-        $this->title = 'Редактирование страницы - ' . $this->title;
-
-        $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-        if (!isset($id)) {
+        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+        if (!$id) {
             header('Location: index.php?c=page');
-        } else {
-            $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+            exit;
         }
 
-        if ($id)
-            $this->page = $database->selectPageId($id);
-        else
-            $this->error = "Введите корректный номер страницы";
-
-        if ($this->isPost()) {
-            $title = trim(filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-            if ($title == "") {
-                $this->error = "Введите название страницы.";
-            } else {
-                $this->error = "";
-                $text = $_POST['content'];
-                $html = 0;
-                $database->pageUpdate($id, $title, $text, $html);
-                header('Location: index.php?c=page');
-            }
+        $this->page = $database->selectPageId($id);
+        if (!$this->page) {
+            $this->error = 'Страница не найдена.';
+            return;
         }
+
+        if (!$this->isPost()) {
+            return;
+        }
+
+        $title = trim((string)filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+        $text = $_POST['content'] ?? '';
+        $html = 0;
+
+        if ($title === '') {
+            $this->error = 'Введите название страницы.';
+            return;
+        }
+
+        $database->pageUpdate($id, $title, $text, $html);
+        header('Location: index.php?c=page');
+        exit;
     }
 
-    //
-    // Виртуальный генератор HTML.
-    //	
-    protected function onOutput()
+    protected function onOutput(): void
     {
-        $vars = array('error' => $this->error, 'page' => $this->page);
-        $this->content = $this->template('templates/v_editpage.php', $vars);
+        $this->content = $this->template('templates/v_editpage.php', [
+            'error' => $this->error,
+            'page' => $this->page,
+        ]);
+
         parent::onOutput();
     }
 }

@@ -1,120 +1,153 @@
 <?php
-/*
- * EditUser.php - редактирование пользователя
+/**
+ * EditUser.php — редактирование профиля пользователя
  */
+
 namespace bcms\classes\Users;
 
-use \bcms\classes\BaseClass\Base;
-use \bcms\classes\Database\UserModel;
+use bcms\classes\BaseClass\Base;
+use bcms\classes\Database\UserModel;
+use DOMDocument;
 
-/*
- * Контроллер страницы редактирования пользователя
- */
 class EditUser extends Base
 {
-	protected $user, $userID; // Пользователи
-	private $error;	// сообщение об ошибке
-	
-	/*
-	 * Виртуальный обработчик запроса
-	 */
-	protected function onInput()
-	{		
-		parent::OnInput();
+    protected array $user = [];
+    private ?array $userData = null;
+    private ?string $error = null;
 
-		// Задаем заголовок для страницы представления		
-		$this->title = 'Редактирование профиля - ' . $this->title;		
-		
-		// Менеджеры.
-		$mUsers = UserModel::Instance();
-		
-		// Текущий пользователь.
-		$this->user = $mUsers->Get();
-		
-		$id = htmlspecialchars(trim($_GET['id']));
+    protected function onInput(): void
+    {
+        parent::onInput();
 
-		$this->userID = $mUsers->selectUserID($id);
+        $this->title = 'Редактирование профиля - ' . $this->title;
 
-		if (isset($_POST['SaveInfo'])) {
-			$password = htmlspecialchars(trim($_POST['password']));
-			$password_apply = htmlspecialchars(trim($_POST['password_apply']));
-			
-			if ($password_apply == "") {
-				$pass = $this->userID['password'];
-			} elseif ($password_apply != "") {
-				if ($password == $password_apply) {
-					$pass = md5($_POST['password']);
-				} else {
-					$this->error = "Пароли не совпадают!";
-				}
-			}
+        $userModel = UserModel::Instance();
+        $this->user = $userModel->Get() ?? [];
 
-			// Путь к аватарке
-			preg_match('|<p.*?>(.*)</p>|sei', $_POST['avatar'], $arr);
-			$avatar1 = $arr[1];
-			$dom = new DOMDocument;
-			$dom->loadHTML($avatar1);
-			foreach ($dom->getElementsByTagName('img') as $node) {
-				$avatar2 = $node->getAttribute( 'src' );
-		    } 
-			
-			if (@$avatar2 == null) {
-				$avatar = $avatar1;
-			} else {
-				$avatar = $avatar2;  
-			}
-			
-			$name = htmlspecialchars(trim($_POST['name']));
-			$surname = htmlspecialchars(trim($_POST['surname']));
-			$email = htmlspecialchars(trim($_POST['email']));
-			$lastname = htmlspecialchars(trim($_POST['lastname']));
-			$sex = htmlspecialchars(trim($_POST['sex']));
-			$city = htmlspecialchars(trim($_POST['city']));
-			$mobile_phone = htmlspecialchars(trim($_POST['mobile_phone']));
-			$work_phone = htmlspecialchars(trim($_POST['work_phone']));
-			$skype = htmlspecialchars(trim($_POST['skype']));
-			$date = $_POST['birth_date'];
-			$date = substr($date, 6, 10)."-".substr($date, 3, 2)."-".substr($date, 0, 2);
-			$mUsers->editUserInfo(
-				$id, 
-				$pass, 
-				$name, 
-				$surname, 
-				$email, 
-				$lastname, 
-				$avatar, 
-				$date, 
-				$sex, 
-				$city, 
-				$mobile_phone, 
-				$work_phone, 
-				$skype
-			);
-			header('Location: index.php?c=profile&id='.$_GET['id'].'');
-		}
+        $userId = (int)filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+        if (!$userId) {
+            header('Location: index.php?c=users');
+            exit;
+        }
 
-		if (isset($_POST['Close'])) {
-			header('Location: index.php?c=users');
-			die();
-		}
-		
-		if (isset($_POST['Delete'])) {
-			header('Location: index.php?c=confirm&delete=users&id='.$_POST['id']);
-			die();
-		}
-		
-		if (isset($_POST['Block'])) {
-			echo "<script>alert('Функция разблокируется предположительно в версии 3.0.1')</script>";
-		}
-	}
-	
-	/*
-	 * Виртуальный генератор HTML
-	 */
-	protected function onOutput()
-	{
-		$vars = array('user' => $this->user, 'userID' => $this->userID, 'error' => $this->error);	
-		$this->content = $this->template('templates/v_editUser.php', $vars);
-		parent::onOutput();
-	}	
+        $this->userData = $userModel->selectUserID($userId);
+
+        if ($this->isPost()) {
+            $this->handlePost($userModel, $userId);
+        }
+    }
+
+    private function handlePost(UserModel $userModel, int $userId): void
+    {
+        if (isset($_POST['Close'])) {
+            header('Location: index.php?c=users');
+            exit;
+        }
+
+        if (isset($_POST['Delete'])) {
+            header('Location: index.php?c=confirm&delete=users&id=' . $userId);
+            exit;
+        }
+
+        if (isset($_POST['Block'])) {
+            echo "<script>alert('Функция будет доступна в будущих версиях.')</script>";
+            return;
+        }
+
+        if (isset($_POST['SaveInfo'])) {
+            $password = trim($_POST['password'] ?? '');
+            $passwordApply = trim($_POST['password_apply'] ?? '');
+
+            if ($passwordApply === '') {
+                $finalPassword = $this->userData['password'] ?? '';
+            } elseif ($password === $passwordApply) {
+                $finalPassword = md5($password);
+            } else {
+                $this->error = 'Пароли не совпадают!';
+                return;
+            }
+
+            $avatar = $this->extractAvatar($_POST['avatar'] ?? '');
+
+            // Прочие поля
+            $fields = [
+                'name' => filter_input(INPUT_POST, 'name', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'surname' => filter_input(INPUT_POST, 'surname', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'email' => filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL),
+                'lastname' => filter_input(INPUT_POST, 'lastname', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'sex' => filter_input(INPUT_POST, 'sex', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '',
+                'city' => filter_input(INPUT_POST, 'city', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'mobile_phone' => filter_input(INPUT_POST, 'mobile_phone', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'work_phone' => filter_input(INPUT_POST, 'work_phone', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'skype' => filter_input(INPUT_POST, 'skype', FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'birth_date' => $this->formatDate($_POST['birth_date'] ?? ''),
+            ];
+
+            $userModel->editUserInfo(
+                $userId,
+                $finalPassword,
+                $fields['name'],
+                $fields['surname'],
+                $fields['email'],
+                $fields['lastname'],
+                $avatar,
+                $fields['birth_date'],
+                $fields['sex'],
+                $fields['city'],
+                $fields['mobile_phone'],
+                $fields['work_phone'],
+                $fields['skype'],
+            );
+
+            header("Location: index.php?c=profile&id={$userId}");
+            exit;
+        }
+    }
+
+    private function extractAvatar(string $html): string
+    {
+        $html = trim($html);
+        if ($html === '') {
+            return '';
+        }
+
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+
+        // Защита от исключения при пустом/некорректном HTML
+        if (!@$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
+            libxml_clear_errors();
+            return '';
+        }
+
+        libxml_clear_errors();
+
+        foreach ($dom->getElementsByTagName('img') as $img) {
+            return $img->getAttribute('src');
+        }
+
+        // Если <img> не найден, возвращаем чистый текст
+        return strip_tags($html);
+    }
+
+    private function formatDate(string $date): string
+    {
+        // Ожидается формат: дд.мм.гггг
+        if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $date)) {
+            return date('Y-m-d', strtotime(str_replace('.', '-', $date)));
+        }
+        return '';
+    }
+
+    protected function onOutput(): void
+    {
+        $vars = [
+            'user' => $this->user,
+            'userID' => $this->userData,
+            'error' => $this->error,
+        ];
+
+        $this->content = $this->template('templates/v_editUser.php', $vars);
+        parent::onOutput();
+    }
 }

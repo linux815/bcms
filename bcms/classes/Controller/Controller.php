@@ -1,76 +1,74 @@
-<?php 
+<?php
+
 namespace bcms\classes\Controller;
-/*
+
+use RuntimeException;
+
+/**
  * Базовый класс контроллера
  */
 abstract class Controller
 {
-    /*
-     * Конструктор
-     */
-    function __construct()
-    {
-
-    }
-
-    /*
+    /**
      * Полная обработка HTTP запроса
      */
-    public function request()
+    public function request(): void
     {
         $this->onInput();
         $this->onOutput();
     }
 
-    /*
+    /**
      * Виртуальный обработчик запроса
      */
-    protected function onInput()
+    protected function onInput(): void
     {
-
+        // Для переопределения в наследниках
     }
 
-    /*
+    /**
      * Виртуальный генератор HTML
-     */	
-    protected function onOutput()
+     */
+    protected function onOutput(): void
     {
-
+        // Для переопределения в наследниках
     }
 
-    /*
+    /**
      * Запрос произведен методом GET?
      */
-    protected function isGet()
+    protected function isGet(): bool
     {
-        return filter_input(INPUT_SERVER, 
-                            'REQUEST_METHOD', 
-                            FILTER_SANITIZE_FULL_SPECIAL_CHARS) == 'GET';
+        return $_SERVER['REQUEST_METHOD'] === 'GET';
     }
 
-    /*
+    /**
      * Запрос произведен методом POST?
      */
-    protected function isPost()
+    protected function isPost(): bool
     {
-        return filter_input(INPUT_SERVER, 
-                            'REQUEST_METHOD', 
-                            FILTER_SANITIZE_FULL_SPECIAL_CHARS) == 'POST';
+        return $_SERVER['REQUEST_METHOD'] === 'POST';
     }
 
-    /*
-     * Генерация HTML кода в строку
+    /**
+     * Генерация HTML кода из шаблона в строку
+     *
+     * @param string $fileName Путь к файлу шаблона (относительно /bcms)
+     * @param array<int|string, mixed> $vars Переменные для шаблона
+     * @return string Сгенерированный HTML
      */
-    protected function template($fileName, $vars = array())
+    protected function template(string $fileName, array $vars = []): string
     {
-        // Установка переменных для шаблона.
-        foreach ($vars as $k => $v) {
-            $$k = $v;
+        extract($vars, EXTR_OVERWRITE);
+
+        $templatePath = realpath(__DIR__ . '/../../' . $fileName);
+
+        if ($templatePath === false || !is_file($templatePath)) {
+            throw new RuntimeException("Шаблон не найден: {$fileName}");
         }
 
-        // Генерация HTML в строку.
         ob_start();
-        include $fileName;
-        return ob_get_clean();	
-    }	
+        include $templatePath;
+        return ob_get_clean() ?: '';
+    }
 }

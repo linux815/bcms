@@ -1,82 +1,87 @@
-<?php namespace bcms\classes\Database;
+<?php
 
-use \PDO;
-use \PDOException;
+namespace bcms\classes\Database;
 
-require($_SERVER['DOCUMENT_ROOT'].'/bcms/classes/Config/Config.php');
+use PDO;
+use PDOException;
+
+require_once __DIR__ . '/../Config/Config.php';
 
 class ReviewModel
 {
+    private ?PDO $dbh = null;
+
     public function __construct()
     {
-        
+        try {
+            $this->dbh = new PDO(
+                "mysql:host=" . HOSTNAME . ";dbname=" . DBNAME,
+                USERNAME,
+                PASSWORD,
+                [
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ],
+            );
+        } catch (PDOException $e) {
+            die('Connection failed: ' . $e->getMessage());
+        }
     }
 
-    public function selectReview()
+    public function selectReview(): array|string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
             $sql = "SELECT * FROM reviews ORDER BY id_review DESC";
-
-            return $dbh->query($sql);
-
-            $dbh = NULL;
+            return $this->dbh->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function selectReviewId($id)
+    public function selectReviewId(int $id): array|string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "SELECT * FROM reviews where id_review = '$id' ORDER BY id_review DESC";
-
-            return $dbh->query($sql)->fetch();
-
-            $dbh = NULL;
+            $sql = "SELECT * FROM reviews WHERE id_review = :id LIMIT 1";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function deleteReview($id)
+    public function deleteReview(int $id): ?string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "DELETE FROM reviews WHERE id_review = ?";
-            $q = $dbh->prepare($sql);
-            $q->execute(array($id));
-
-            $dbh = NULL;
+            $sql = "DELETE FROM reviews WHERE id_review = :id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            return null;
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    public function addReview($title, $text, $name, $email)
+    public function addReview(string $title, string $text, string $name, string $email): ?string
     {
         try {
-
-            $dbh = new PDO("mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . "", USERNAME, PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-
-            $sql = "INSERT INTO `reviews` (`id_review`, `title`, `text`, `name`, `email`) VALUES (NULL, :title, :text, :name, :email);";
-            $q = $dbh->prepare($sql);
-            $q->execute(array(':title' => $title,
+            $sql = "INSERT INTO reviews (title, text, name, email) 
+                    VALUES (:title, :text, :name, :email)";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':title' => $title,
                 ':text' => $text,
                 ':name' => $name,
-                ':email' => $email));
-
-            $dbh = NULL;
+                ':email' => $email,
+            ]);
+            return null;
         } catch (PDOException $e) {
             return $e->getMessage();
         }
     }
 
+    public function __destruct()
+    {
+        $this->dbh = null;
+    }
 }

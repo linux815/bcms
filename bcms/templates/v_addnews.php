@@ -1,57 +1,101 @@
-<?php
-/*
- * v_addnews.php - шаблон добавления новости
- */
-?>
-<script type="text/javascript" src="tinymce/tinymce.min.js"></script>
-<script type="text/javascript">
+<!-- TinyMCE -->
+<script src="tinymce/tinymce.min.js"></script>
+<script>
     tinymce.init({
         selector: "textarea",
-        theme: "modern",
-        skin: 'light',
         height: 350,
-        autosave_interval: "20s",
+        language: "ru",
         plugins: [
-            "advlist autolink lists link image charmap print preview hr anchor pagebreak autosave",
-            "searchreplace wordcount visualblocks visualchars code fullscreen",
-            "insertdatetime media nonbreaking save table contextmenu directionality",
-            "emoticons template paste textcolor responsivefilemanager"
+            "advlist autolink lists link image charmap preview anchor",
+            "searchreplace wordcount visualblocks fullscreen",
+            "insertdatetime media table code"
         ],
-        toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image hr | print preview media | forecolor backcolor emoticons",
-        image_advtab: true,
-        language: 'ru',
-        external_filemanager_path: "../filemanager/",
-        filemanager_title: "Responsive Filemanager",
-        browser_spellcheck: true,
-        external_plugins: {"filemanager": "../filemanager/plugin.min.js"}
+        toolbar: "undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | link image | preview code fullscreen",
+        image_title: true,
+        automatic_uploads: true,
+        images_upload_url: "upload_image.php",
+        file_picker_types: 'image',
+        file_picker_callback: function (cb, value, meta) {
+            if (meta.filetype === 'image') {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = function () {
+                    const file = this.files[0];
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    fetch('upload_image.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(res => res.json())
+                        .then(data => cb(data.location))
+                        .catch(() => alert('Ошибка загрузки изображения'));
+                };
+                input.click();
+            }
+        }
     });
 </script>
 
-<form method="post" action="somepage">
+<style>
+    .form-wrapper {
+        margin-top: 24px;
+        margin-bottom: 24px;
+    }
 
-  <?php
-   if ($error == ""):
-   else:
-  ?>
+    .form-card {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        background-color: #fff;
+    }
 
-  <p class="error"><?= $error ?></p>
+    .form-label {
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
 
-   <?php endif; ?>
+    .form-control,
+    textarea {
+        font-size: 0.95rem;
+        padding: 0.45rem 0.75rem;
+    }
 
-  <p>
-    <label>Заголовок <small>Время к новости добавляется автоматически</small></label>
-    <input type="text" name="title" style="width: 99%;"/>
-  </p>
+    .btn {
+        padding: 0.45rem 1.5rem;
+        font-size: 0.95rem;
+    }
+</style>
 
-  <textarea name="content" style="width:100%">
-	  <p style="text-align: center;"></p>
-  </textarea>
+<div class="container form-wrapper" style="max-width: 768px;">
+    <div class="form-card">
+        <h5 class="mb-3 text-center">Добавление новости</h5>
 
-  <br/>
+        <?php
+        if (!empty($error)): ?>
+            <div class="alert alert-danger py-2 mb-3"><?= htmlspecialchars($error) ?></div>
+        <?php
+        endif; ?>
 
-  <p>
-    <button class="button" type="submit" name="SaveInfo" formaction="" formmethod="post" formenctype="multipart/form-data">
-      <img src="images/icons/tick.png" alt="Добавить" title="Добавить" name="Save" /> Добавить
-    </button>
-  </p>	
-</form>
+        <form method="post" novalidate>
+            <div class="mb-3">
+                <label for="title" class="form-label">Заголовок</label>
+                <input type="text" id="title" name="title" class="form-control" required
+                       placeholder="Введите заголовок">
+            </div>
+
+            <div class="mb-3">
+                <label for="content" class="form-label">Текст новости</label>
+                <textarea id="content" name="content"></textarea>
+            </div>
+
+            <div class="text-center mt-3">
+                <button type="submit" name="SaveInfo" class="btn btn-success shadow-sm">
+                    Добавить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

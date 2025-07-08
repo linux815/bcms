@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: bcms-app
+    volumes:
+      - ./:/app
+      - ./docker/Caddyfile:/etc/frankenphp/Caddyfile
+      - ./docker/logs:/var/log/caddy
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "443:443/udp"# HTTP/3
+      - "5173:5173"  # Vite dev server
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - db
+    tty: true
+  node:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "5173:5173"
+  db:
+    image: mysql:8.0
+    container_name: bcms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql_data:

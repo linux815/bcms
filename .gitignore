@@ -1,0 +1,12 @@
+.idea
+.env
+*.iml
+out
+gen
+docker/data
+vendor/
+docker/logs/
+bcms/classes/Config/Config.php
+node_modules/
+public/assets/
+public/uploads/

@@ -1,0 +1,27 @@
+{
+  "name": "bcms",
+  "version": "4.0.0",
+  "description": "",
+  "main": "vite.config.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "sass": "^1.89.2",
+    "vite": "^5.0.0",
+    "vite-plugin-static-copy": "^3.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/linux815/bcms.git"
+  },
+  "private": true,
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.7",
+    "bootstrap-icons": "^1.13.1"
+  }
+}

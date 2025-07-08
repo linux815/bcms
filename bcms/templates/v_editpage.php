@@ -1,109 +1,111 @@
-<?php
-/**
- * v_editpage.php - шаблон редактирования страницы
- * ================
- * $page - массив, содержащий текущую страницу.
- * Содержит в себе элементы: 
- * 	id_page - номер страницы
- *  title - заголовок страницы
- *  text - текст страницы, созданный в редакторе TinyMCE
- *  date - дата последнего изменения/создания страницы
- * ================
- * Пример: echo $page['text'] - выводит текст текущей страницы
- */
-?>
-<script type="text/javascript" src="tinymce/tinymce.min.js"></script>
-<script type="text/javascript">
+<!-- TinyMCE -->
+<script src="/bcms/tinymce/tinymce.min.js"></script>
+<script>
     tinymce.init({
         selector: "textarea",
-        theme: "modern",
-        skin: 'light',
-        height: 350,
-        autosave_interval: "20s",
-        plugins: [
-            "advlist autolink lists link image charmap print preview hr anchor pagebreak autosave",
-            "searchreplace wordcount visualblocks visualchars code fullscreen",
-            "insertdatetime media nonbreaking save table contextmenu directionality",
-            "emoticons template paste textcolor responsivefilemanager"
-        ],
-        toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image hr | print preview media | forecolor backcolor emoticons",
-        image_advtab: true,
-        language: 'ru',
-        external_filemanager_path: "filemanager/",
-        filemanager_title: "Responsive Filemanager",
-        browser_spellcheck: true,
-        external_plugins: {"filemanager": "../filemanager/plugin.min.js"}
+        height: 360,
+        language: "ru",
+        plugins: "image link lists code preview fullscreen",
+        toolbar: "undo redo | styles | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | link image | preview code fullscreen",
+        menubar: false,
+        branding: false,
+        automatic_uploads: true,
+        images_upload_url: "upload_image.php",
+        file_picker_types: 'image',
+        image_title: true,
+        file_picker_callback: function (cb, value, meta) {
+            if (meta.filetype === 'image') {
+                const input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', 'image/*');
+                input.onchange = function () {
+                    const file = this.files[0];
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    fetch('upload_image.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => cb(data.location))
+                        .catch(() => alert('Ошибка загрузки изображения'));
+                };
+                input.click();
+            }
+        }
     });
 </script>
-<?php if (isset($error)): ?> <p class='error'><?= $error ?></p> <?php else: ?>
-    <form method="post" action="somepage">	
-      <p>
-        <label>Название страницы <small>Данное название добавляется в меню вашего сайта.</small></label>
-        <input type="text" name="title" style="width: 99%;" value="<?= $page['title'] ?>"/>
-      </p>
-      <p>
-        <label>Подключить модуль<small>при нажатии на кнопку, данные модули добавляются без перезагрузки страницы.</small></label>
-        <select id="module" name="modules">
-          <option disabled selected>Выберите модуль для данной страницы</option>
-          <option value="news">Подключить модуль "Новости"</option>
-          <option value="ghost">Подключить гостевую книгу</option>
-          <option value="review">Подключить модуль "Обратная связь"</option>
-          <option value="disable">Отключить все модули от данной страницы</option>	
-        </select>
 
-        <input type="hidden" id="id" name="hide" value="<?= $_GET['id'] ?>">	
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light border-bottom">
+            <h5 class="mb-0">Редактирование страницы</h5>
+        </div>
+        <div class="card-body">
+            <?php
+            if (!empty($error)): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php
+            endif; ?>
 
-        <script type="text/javascript">
-            function send()
-            {
-                //Получаем параметры
-                var module = $('#module').val();
-                var id = $('#id').val();
-                // Отсылаем паметры
-                $.ajax({
-                    type: "POST",
-                    url: "index.php?c=jquery",
-                    data: "module=" + module + "&id=" + id,
-                    // Выводим то что вернул PHP
-                    success: function (html) {
-                        //предварительно очищаем нужный элемент страницы
-                        $("#result").empty();
-                        //и выводим ответ php скрипта
-                        $("#result").append(html);
-                    }
-                });
+            <form method="post">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Название страницы</label>
+                    <input type="text" class="form-control" id="title" name="title"
+                           value="<?= htmlspecialchars($page['title'] ?? '') ?>" required>
+                    <div class="form-text">Это название будет отображаться в меню сайта.</div>
+                </div>
 
-            }
-            function check()
-            {
-                //Получаем параметры
-                // Отсылаем паметры
-                $.ajax({
-                    type: "POST",
-                    url: "http://bazhenov.esy.es/maxicms/index.php?c=jquery&check",
-                    // Выводим то что вернул PHP
-                    success: function (html) {
-                        //предварительно очищаем нужный элемент страницы
-                        $("#check").empty();
-                        //и выводим ответ php скрипта
-                        $("#check").append(html);
-                    }
-                });
+                <div class="mb-3">
+                    <label for="modules" class="form-label">Подключить модуль</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <select id="modules" name="modules" class="form-select w-auto">
+                            <option disabled selected>Выберите модуль</option>
+                            <option value="news">Новости</option>
+                            <option value="ghost">Гостевая книга</option>
+                            <option value="review">Обратная связь</option>
+                            <option value="disable">Отключить все</option>
+                        </select>
+                        <input type="hidden" id="page-id" name="hide" value="<?= (int)($_GET['id'] ?? 0) ?>">
+                        <button type="button" onclick="sendModule()" class="btn btn-outline-secondary">Добавить</button>
+                    </div>
+                    <div id="result" class="form-text mt-1"></div>
+                </div>
 
-            }
-        </script>
+                <div class="mb-3">
+                    <label for="content" class="form-label">Содержимое страницы</label>
+                    <textarea name="content" id="content"><?= htmlspecialchars($page['text'] ?? '') ?></textarea>
+                </div>
 
-        <a href="#" onclick="send();" >Добавить</a><div id="result"></div>
-    </p>	
+                <div class="text-end">
+                    <button type="submit" name="SaveInfo" class="btn btn-success">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-    <textarea name="content" style="width:100%"><?= $page['text'] ?></textarea>
+<script>
+    function sendModule() {
+        const module = document.getElementById('modules').value;
+        const id = document.getElementById('page-id').value;
 
-    <br/>
+        if (!module || !id) return;
 
-    <p>
-      <button class="button" type="submit" name="SaveInfo" formaction="" formmethod="post" formenctype="multipart/form-data">
-        <img src="images/icons/tick.png" alt="Save" name="Save" /> Сохранить
-      </button>
-    </p>	
-    </form>
-<?php endif; ?>
+        fetch('index.php?c=jquery', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'module=' + encodeURIComponent(module) + '&id=' + encodeURIComponent(id)
+        })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('result').innerHTML = html;
+            })
+            .catch(() => {
+                document.getElementById('result').textContent = 'Ошибка при добавлении модуля';
+            });
+    }
+</script>

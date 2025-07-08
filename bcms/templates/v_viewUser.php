@@ -1,135 +1,58 @@
-<?php
-/**
- * v_viewuser.php - шаблон просмотра пользователя
- * ================
- * $userID - массив, содержащий текущего пользователя.
- * Содержит в себе элементы: 
- * 	id_user - номер страницы
- *  login - логин пользователя
- *  password - пароль пользователя (захеширован по MD5)
- *  name - имя
- *  surname - фамилия
- *  lastname - отчество
- *  avatar - аватарка пользователя
- *  email - электронный адрес
- *  reg_date - дата регистрации пользователя
- *  birth_date - дата рождения
- *  sex - пол (Мужской, Женский, Средний)
- *  view - количество просмотров пользователя
- *  city - город
- *  mobile_phone - мобильный телефон
- *  work_phone - рабочий телефон
- *  skype - логин от skype 
- *  
- * ================
- * Пример: echo $userID['name'] - выводит имя текущего пользователя
- */
-?>
-<div class="grid_8">
-  <div class="box">
-    <h2>Общая информация</h2>
-    <div class="utils">
-      <a href="index.php?c=edituser&id=<?= $userID['id_user'] ?>">Редактировать</a>
-    </div>
-    <div class="content">
-      <div class="inner">
-        <form action="#" method="get" class="form">
-          <div class="columns wat-cf">
-            <div class="column ">
-              <div class="group">
-                <p class="first">
-                <div >
-                  <a href="#"><img class="avatar" src="../source/<?= $userID['avatar'] ?>" alt="avatar" /></a>
-                </div>
-                <p>
-                  <b>Login</b>: 
-                  <?= $userID['login'] ?>
-                </p>
-                <p>
-                  <b>ФИО</b>: 
-                  <?= $userID['surname'] . " " . $userID['name'] . " " . $userID['lastname'] ?> 
-                </p>
-                <p>
-                  <b>Дата регистрации</b>: <?= $userID['reg_date'] ?>
-                </p>
-                <p>
-                  <b>Последняя активность</b>: 
-                  <?= $session['time_last'] ?>
-                </p>
-                <p>
-                  <b>Текущий статус</b>: 
-                  <? if ($session['online'] == "") echo "Оффлайн"; else echo $session['online']?>
-                </p>
-                <p>
-                  <b>Просмотров профиля</b>: 
-                  <?= $userID['view'] ?>
-                </p>
-                <p>
-                  <b>Всего отправлено сообщений</b>: 0
-                </p>
-                </p>  
-              </div>
-            </div>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="grid_8">
-  <div class="box">
-    <h2>Информация о пользователе</h2>
-    <div class="utils">
-      <a href="index.php?c=edituser&id=<?= $userID['id_user'] ?>">Изменить</a>
-    </div>
-    <div class="column ">
-      <div class="group">
-        <p class="first">
-        <div >
-          <a href="#"><img class="avatar" src="images/icons/user_info.png" height="50px" width="50px" alt="Информация о пользователе" title="Информация о пользователе" /></a>
-        </div>
-        <p>
-          <b>Пол</b>: 
-          <?= $userID['sex'] ?>
-        </p>
-        <p>
-          <b>Дата рождения</b>: 
-          <?= $userID['birth_date'] ?>
-        </p>
-        <p>
-          <b>Родной город</b>: 
-          <?= $userID['city'] ?>
-        </p>
-        <p>
-          <b>Мобильный телефон</b>: 
-          <?= $userID['mobile_phone'] ?>
-        </p>
-        <p>
-          <b>Домашний телефон</b>: 
-          <?= $userID['work_phone'] ?>
-        </p>
-        <p>
-          <b>Skype</b>: 
-          <?= $userID['skype'] ?>
-        </p>
-        <p>
-          <b>Email</b>: <?= $userID['email'] ?>
-        </p>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-</form>
+<div class="row g-4">
 
-<div class="grid_7">
-  <div class="content">
-    <div class="inner">
-      <form action="index.php?c=users" method="post" class="form">
-        <p>
-          <button class="button" type="submit">
-            <img src="images/icons/tick.png" alt="Закрыть" /> Закрыть
-          </button>
-        </p>
+    <!-- Блок: Общая информация -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Общая информация</h5>
+                <a href="index.php?c=edituser&id=<?= $userID['id_user'] ?>" class="btn btn-sm btn-outline-primary">Редактировать</a>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="<?= htmlspecialchars($userID['avatar']) ?>" alt="Аватар" class="rounded-circle" width="96"
+                         height="96">
+                </div>
+                <p><strong>Login:</strong> <?= htmlspecialchars($userID['login']) ?></p>
+                <p><strong>ФИО:</strong> <?= htmlspecialchars(
+                        $userID['surname'] . " " . $userID['name'] . " " . $userID['lastname'],
+                    ) ?></p>
+                <p><strong>Дата регистрации:</strong> <?= htmlspecialchars($userID['reg_date']) ?></p>
+                <p><strong>Последняя активность:</strong> <?= htmlspecialchars($session['time_last'] ?? '—') ?></p>
+                <p><strong>Текущий статус:</strong>
+                    <?= empty($session['online']) ? 'Оффлайн' : htmlspecialchars($session['online']) ?>
+                </p>
+                <p><strong>Просмотров профиля:</strong> <?= (int)$userID['view'] ?></p>
+                <p><strong>Всего отправлено сообщений:</strong> 0</p>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Блок: Личная информация -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Информация о пользователе</h5>
+                <a href="index.php?c=edituser&id=<?= $userID['id_user'] ?>" class="btn btn-sm btn-outline-primary">Изменить</a>
+            </div>
+            <div class="card-body">
+                <p><strong>Пол:</strong> <?= htmlspecialchars($userID['sex']) ?></p>
+                <p><strong>Дата рождения:</strong> <?= htmlspecialchars($userID['birth_date']) ?></p>
+                <p><strong>Родной город:</strong> <?= htmlspecialchars($userID['city']) ?></p>
+                <p><strong>Мобильный телефон:</strong> <?= htmlspecialchars($userID['mobile_phone']) ?></p>
+                <p><strong>Домашний телефон:</strong> <?= htmlspecialchars($userID['work_phone']) ?></p>
+                <p><strong>Skype:</strong> <?= htmlspecialchars($userID['skype']) ?></p>
+                <p><strong>Email:</strong> <?= htmlspecialchars($userID['email']) ?></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка закрыть -->
+    <div class="col-md-12 text-end">
+        <form action="index.php?c=users" method="post">
+            <button type="submit" class="btn btn-success mt-3">
+                <img src="images/icons/tick.png" alt="Закрыть" class="me-2" width="18"> Закрыть
+            </button>
+        </form>
+    </div>
+
 </div>

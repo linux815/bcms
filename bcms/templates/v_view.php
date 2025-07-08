@@ -1,105 +1,61 @@
-<script type="text/javascript">
-    function send()
-    {
-        //Получаем параметры
-        var title = $('#title').val();
-        var text = $('#text').val();
-        // Отсылаем паметры
-        $.ajax({
-            type: "POST",
-            url: "index.php?c=jquery",
-            data: "title=" + title + "&text=" + text,
-            // Выводим то что вернул PHP
-            success: function (html) {
-                //предварительно очищаем нужный элемент страницы
-                $("#result").empty();
-                //и выводим ответ php скрипта
-                $("#result").append(html);
-            }
-        });
-    }
-    function check()
-    {
-        //Получаем параметры
-        // Отсылаем паметры
-        $.ajax({
-            type: "GET",
-            url: "http://bazhenov.esy.es/maxicms/index.php?c=jquery&check",
-            // Выводим то что вернул PHP
-            success: function (html) {
-                //предварительно очищаем нужный элемент страницы
-                $("#check").empty();
-                //и выводим ответ php скрипта
-                $("#check").append(html);
-            }
-        });
-    }
-</script>
-<form action="#" method="post" id="myform">
-  <div class="grid_6">
-    <div class="box">
-      <h2>Общая информация</h2>
-      <div class="utils">
-      </div>
-      <p>
-        <b>Название сайта:</b> <?= $nameSite ?> 
-        <br />
-        <b>Имя базы данных:</b> <?= $dbName ?> 
-      <br /> <hr />
-      <img src="images/icons/B.png" width="128px" height="128px" style="float:left; /* Выравнивание по левому краю */
-           margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */" alt="Версия 3.0.1.2" title="Версия 3.0.1.2">
-      <b>Текущая версия:</b> 3.0.1.2
-      <br />
-      <b>В разработке:</b> Проект закрыт!
-      <br /> <br /> <br /> <br /> <br /> <br />
-      </p>
+<div class="row g-4">
+    <!-- Левая колонка: Общая информация (шире) -->
+    <div class="col-md-6">
+        <div class="card card-info p-3 h-100">
+            <h2 class="mb-4">Общая информация</h2>
+            <div class="version-info mb-4">
+                <div class="d-flex align-items-start mb-3 border-bottom pb-3">
+                    <img src="images/icons/B.png" alt="Версия 4.0.0" title="Версия 4.0.0"
+                         style="width:128px; height:128px;" class="me-3">
+                    <div>
+                        <p class="mb-0"><strong>Текущая версия CMS:</strong> 4.0.0</p>
+                    </div>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Название сайта:</strong> <?= htmlspecialchars($nameSite) ?></li>
+                    <li class="list-group-item"><strong>Имя базы данных:</strong> <?= htmlspecialchars($dbName) ?></li>
+                    <li class="list-group-item"><strong>Дата и время сервера:</strong> <?= date('d.m.Y H:i:s') ?></li>
+                    <li class="list-group-item"><strong>Пользователи:</strong> <?= $userCount ?></li>
+                    <li class="list-group-item"><strong>Страницы:</strong> <?= $pageCount ?></li>
+                    <li class="list-group-item"><strong>Новости:</strong> <?= $newsCount ?></li>
+                    <li class="list-group-item"><strong>Гостевая книга:</strong> <?= $guestbookCount ?></li>
+                    <li class="list-group-item"><strong>Отзывы:</strong> <?= $reviewCount ?></li>
+                    <li class="list-group-item"><strong>Удалённые элементы:</strong> <?= $recycleCount ?></li>
+                    <li class="list-group-item">
+                        <strong>Модули:</strong>
+                        Новости (<?= $settings['news'] ? 'вкл' : 'выкл' ?>),
+                        Гостевая книга (<?= $settings['ghost'] ? 'вкл' : 'выкл' ?>),
+                        Отзывы (<?= $settings['review'] ? 'вкл' : 'выкл' ?>)
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="grid_6">
-    <div class="box">
-      <h2>Сообщить об ошибке</h2>
-      <div class="utils">
-      </div>
-      <div id="result"></div>
-      <p>
-        <label for="title">Заголовок <small>Сообщение отправляется анонимно.</small> </label>
-        <input type="text" id="title" name="title" />
-      </p>
-      <p>
-        <label for="post">Текст <small>Мнения, пожелания и замечания.</small> </label>
-        <textarea name="post" id="text"></textarea>
-      </p>
-      <p align="center">
-        <input type="button" style="margin-left: 5px;" onclick="send();" value="Отправить" />
-      </p>
+
+    <!-- Правая колонка: С чего начать + Сообщить об ошибке -->
+    <div class="col-md-6 d-flex flex-column gap-4">
+        <!-- С чего начать -->
+        <div class="card card-minheight p-3">
+            <h2>С чего начать?</h2>
+            <ul class="admin-start-list">
+                <li><a href="index.php?c=addpage"><img src="images/icons/add-file.png" alt="">Создать страницу</a></li>
+                <li><a href="index.php?c=addnews"><img src="images/icons/edit-file.png" alt="">Добавить новость</a></li>
+                <li><a href="index.php?c=modules"><img src="images/icons/application_edit.png" alt="">Подключить модули</a>
+                </li>
+                <li><a href="index.php?c=recycle"><img src="images/icons/recycle.png" alt="">Перейти в корзину</a></li>
+                <li><a href="index.php?c=review"><img src="images/icons/file-find.png" alt="">Прочитать отзывы</a></li>
+            </ul>
+        </div>
+
+        <!-- Сообщить об ошибке -->
+        <div class="card p-3">
+            <h2>Сообщить об ошибке</h2>
+            <p>Если вы заметили баг или хотите предложить улучшение — оставьте issue на GitHub.</p>
+            <a href="https://github.com/linux815/bcms/issues" target="_blank" rel="noopener noreferrer"
+               class="btn btn-outline-primary mt-2">
+                Перейти на GitHub
+            </a>
+        </div>
     </div>
-  </div>	
-  <div class="grid_4">		
-    <div class="box">
-      <h2>С чего начать?</h2>
-      <div class="utils">
-      </div>
-      <p>
-        <a href="index.php?c=addpage"><img src="images/icons/add-file.png" width="18px" height="18px" style="float:left; /* Выравнивание по левому краю */
-                                           margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */">Создать страницу</a>
-      </p>
-      <p>
-        <a href="index.php?c=addnews"><img src="images/icons/edit-file.png" width="18px" height="18px" style="float:left; /* Выравнивание по левому краю */
-                                           margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */">Добавить новость</a>
-      </p>
-      <p>
-        <a href="index.php?c=modules"><img src="images/icons/application_edit.png" width="18px" height="18px" style="float:left; /* Выравнивание по левому краю */
-                                           margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */">Подключить модули</a>
-      </p>
-      <p>
-        <a href="index.php?c=recycle"><img src="images/icons/recycle.png" width="18px" height="18px" style="float:left; /* Выравнивание по левому краю */
-                                           margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */">Перейти в корзину</a>
-      </p>
-      <p>
-        <a href="index.php?c=review"><img src="images/icons/file-find.png" width="18px" height="18px" style="float:left; /* Выравнивание по левому краю */
-                                          margin: 0px 7px 7px 0px; /* Отступы вокруг картинки */">Прочитать отзывы о вашем сайте</a>
-      </p>
-    </div>				
-  </div>
-</div> <!-- -->
-</form>
+</div>

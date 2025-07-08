@@ -1,0 +1,335 @@
+.card h2 {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.4rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.admin-start-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.admin-start-list li {
+    margin-bottom: 1rem;
+}
+
+.admin-start-list a img {
+    margin-right: 0.75rem;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.admin-start-list a {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    color: #1e1e1e;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.admin-start-list a:hover,
+.admin-start-list a:focus {
+    color: #084298;
+    background-color: #e7f1ff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.4);
+    cursor: pointer;
+}
+
+.version-info p {
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+    color: #212529;
+}
+
+.version-info strong {
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, .1);
+    border-radius: 0.375rem;
+    background-color: #fff;
+}
+
+.card-info {
+    min-height: 100%;
+}
+
+.card-minheight {
+    min-height: 300px;
+}
+
+/* Кнопки действий, как в v_page */
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: #212529;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: pointer;
+    margin-right: 0.25rem;
+}
+
+.action-btn:hover,
+.action-btn:focus {
+    background-color: rgba(0, 123, 255, 0.12);
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+    color: #0d6efd;
+    text-decoration: none;
+    outline: none;
+}
+
+.action-btn img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: #212529;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.action-btn:hover,
+.action-btn:focus {
+    background-color: rgba(0, 123, 255, 0.12);
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+    color: #0d6efd;
+    text-decoration: none;
+    outline: none;
+}
+
+.action-btn img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+/* Вертикальное центрирование содержимого ячеек */
+table.table tbody tr td,
+table.table thead tr th {
+    vertical-align: middle;
+}
+
+/* Центрируем заголовок в колонке действий */
+table.table thead tr th.text-end {
+    vertical-align: middle;
+    text-align: center !important;
+}
+
+/* Кнопки действий - прозрачный фон, плавный ховер */
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: #212529;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.action-btn:hover,
+.action-btn:focus {
+    background-color: rgba(0, 123, 255, 0.12);
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+    color: #0d6efd;
+    text-decoration: none;
+    outline: none;
+}
+
+.action-btn img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.module-card {
+    background-color: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.module-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+.module-card .card-title {
+    font-weight: 600;
+}
+
+.module-card .card-text {
+    font-size: 0.9rem;
+}
+
+body, html {
+    height: 100%;
+    background-color: #f8f9fa;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+}
+
+.login-card, .welcome-card {
+    padding: 1.5rem 2rem;
+}
+
+.login-card h2, .welcome-card h3 {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.login-card h2::after,
+.welcome-card h3::after {
+    content: "";
+    display: block;
+    width: 100px;
+    height: 2px;
+    background-color: #343a40;
+    margin: 0.25rem auto 0 auto;
+    border-radius: 2px;
+}
+
+.btn-login {
+    background-color: #343a40;
+    border-color: #343a40;
+    color: #fff;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.btn-login:hover, .btn-login:focus {
+    background-color: #23272b;
+    border-color: #1d2124;
+    color: #fff;
+}
+
+.form-check-label {
+    user-select: none;
+    font-weight: 500;
+}
+
+.form-control {
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+}
+
+/* Добро пожаловать — список с иконками и стрелками */
+.welcome-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.welcome-list li {
+    margin-bottom: 1.5rem; /* увеличенный отступ для большей высоты */
+}
+
+.welcome-list a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 28px; /* отступ слева под иконку */
+    padding-right: 20px; /* место для стрелки справа */
+    color: #343a40;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: color 0.3s ease, background-color 0.3s ease;
+    line-height: 1.4;
+    min-height: 2.5rem; /* минимальная высота для визуальной "воздушности" */
+}
+
+.welcome-list a:hover,
+.welcome-list a:focus {
+    color: #212529;
+    text-decoration: none;
+    background-color: rgba(52, 58, 64, 0.1);
+    outline: none;
+}
+
+.welcome-list a::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    width: 18px;
+    height: 18px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.welcome-list li:nth-child(2) a::before {
+    background-image: url('images/icons/mail.png');
+}
+
+.welcome-list li:nth-child(3) a::before {
+    background-image: url('images/icons/faq.png');
+}
+
+.welcome-list a::after {
+    content: "\25B6"; /* ► */
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #343a40;
+    transition: right 0.3s ease;
+}
+
+.welcome-list a:hover::after,
+.welcome-list a:focus::after {
+    right: 12px;
+}
