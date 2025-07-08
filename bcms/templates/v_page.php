@@ -71,9 +71,9 @@
             </table>
         </div>
 
-        <?php
-        if (!empty($pagination['pages'])): ?>
-            <nav aria-label="Pagination navigation" class="mt-4">
+
+
+            <nav aria-label="Навигация по страницам" class="mt-4">
                 <ul class="pagination justify-content-center flex-wrap gap-1">
                     <?php
                     foreach (['first', 'prev'] as $key): ?>
@@ -87,8 +87,9 @@
                             </li>
                         <?php
                         else: ?>
-                            <li class="page-item disabled" aria-disabled="true"><span
-                                        class="page-link"><?= $key === 'first' ? '&laquo;' : '&lsaquo;' ?></span></li>
+                            <li class="page-item disabled" aria-disabled="true">
+                                <span class="page-link"><?= $key === 'first' ? '&laquo;' : '&lsaquo;' ?></span>
+                            </li>
                         <?php
                         endif; ?>
                     <?php
@@ -115,16 +116,16 @@
                             </li>
                         <?php
                         else: ?>
-                            <li class="page-item disabled" aria-disabled="true"><span
-                                        class="page-link"><?= $key === 'last' ? '&raquo;' : '&rsaquo;' ?></span></li>
+                            <li class="page-item disabled" aria-disabled="true">
+                                <span class="page-link"><?= $key === 'last' ? '&raquo;' : '&rsaquo;' ?></span>
+                            </li>
                         <?php
                         endif; ?>
                     <?php
                     endforeach; ?>
                 </ul>
             </nav>
-        <?php
-        endif; ?>
+
     <?php
     endif; ?>
 </form>

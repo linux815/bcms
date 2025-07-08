@@ -12,10 +12,10 @@ use bcms\classes\Database\DatabaseModel;
 
 class Page extends Base
 {
-    protected array $allPage;
+    protected array $allPage = [];
 
-    private int $num;
-    private int $page;
+    private int $num = 10;
+    private int $page = 1;
     private array $pagination = [];
 
     protected function onInput(): void
@@ -46,22 +46,19 @@ class Page extends Base
         $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT);
         $this->page = $page !== false && $page !== null ? $page : 1;
 
-        $posts = $database->countPage();
-        $totalItems = (int)($posts[0] ?? 0);
+        $totalItems = (int)($database->countPage()['count'] ?? 0);
 
         if ($totalItems === 0) {
             $this->num = 10;
         } elseif ($totalItems < 10) {
             $this->num = $totalItems;
         } else {
-            $this->num = 20;
+            $this->num = 10;
         }
 
         $totalPages = (int)ceil($totalItems / $this->num);
 
-        if ($this->page < 1) {
-            $this->page = 1;
-        } elseif ($this->page > $totalPages) {
+        if ($this->page > $totalPages && $totalPages > 0) {
             $this->page = $totalPages;
         }
 
@@ -80,7 +77,6 @@ class Page extends Base
             'prev' => $this->page > 1 ? $this->page - 1 : null,
             'next' => $this->page < $totalPages ? $this->page + 1 : null,
             'last' => $this->page < $totalPages ? $totalPages : null,
-            'current' => $this->page, // ✅ Добавим текущую страницу явно
             'pages' => array_filter([
                 $this->page - 2 > 0 ? $this->page - 2 : null,
                 $this->page - 1 > 0 ? $this->page - 1 : null,
@@ -88,6 +84,7 @@ class Page extends Base
                 $this->page + 1 <= $totalPages ? $this->page + 1 : null,
                 $this->page + 2 <= $totalPages ? $this->page + 2 : null,
             ]),
+            'current' => $this->page,
         ];
     }
 
@@ -97,7 +94,6 @@ class Page extends Base
             'allPage' => $this->allPage,
             'num' => $this->num,
             'pagination' => $this->pagination,
-            'currentPage' => $this->page,
         ];
 
         $this->content = $this->template('templates/v_page.php', $vars);

@@ -115,11 +115,16 @@ class Recycle extends Base
 
     private function preparePagination(DatabaseModel $db): void
     {
-        $countResult = $db->countDel($this->table);
-        $this->totalItems = max(1, (int)($countResult[0] ?? 10));
-        $this->perPage = min($this->totalItems, 10);
-        $this->totalPages = (int)ceil($this->totalItems / $this->perPage);
+        $this->totalItems = (int)($db->countDel($this->table)['count'] ?? 0);
+        if ($this->totalItems === 0) {
+            $this->perPage = 10;
+        } elseif ($this->totalItems < 10) {
+            $this->perPage = $this->totalItems;
+        } else {
+            $this->perPage = 10;
+        }
 
+        $this->totalPages = (int)ceil($this->totalItems / $this->perPage);
         $currentPage = max(1, min((int)$this->page, $this->totalPages));
         $this->page = (string)$currentPage;
 
