@@ -27,21 +27,14 @@
                 <ul class="navbar-nav mx-auto">
                     <?php
                     $currentId = $_GET['id'] ?? 1;
-                    $navLinks = [
-                        1 => 'Главная',
-                    ];
-                    if (!empty($settings['news'])) {
-                        $navLinks[2] = 'Новости';
-                    }
-                    if (!empty($settings['ghost'])) {
-                        $navLinks[3] = 'Гостевая книга';
-                    }
-                    if (!empty($settings['review'])) {
-                        $navLinks[4] = 'Обратная связь';
-                    }
-                    foreach ($navLinks as $id => $name) {
-                        $active = ($currentId == $id) ? 'active' : '';
-                        echo "<li class='nav-item'><a class='nav-link $active' href='index.php?c=view&id=$id'>$name</a></li>";
+                    foreach ($pages as $id => $value) {
+                        $idPage = $value['id_page'];
+                        if ($idPage > 4) {
+                            break;
+                        }
+                        $title = $value['title'];
+                        $active = ($currentId == $idPage) ? 'active' : '';
+                        echo "<li class='nav-item'><a class='nav-link $active' href='index.php?c=view&id=$idPage'>$title</a></li>";
                     }
                     ?>
                 </ul>

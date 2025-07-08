@@ -19,10 +19,10 @@
                 <img src="images/icons/user_info.png" alt="Пользователи" width="16" class="me-1">Пользователи
             </button>
             <button type="submit" name="page" class="btn btn-outline-secondary btn-sm" formaction="" formmethod="post">
-                <img src="images/icons/file-find.png" alt="Страницы" width="16" class="me-1">Страницы
+                <img src="images/icons/file-find.png" alt="Страницы" width="16" class="me-1">
             </button>
             <button type="submit" name="news" class="btn btn-outline-secondary btn-sm" formaction="" formmethod="post">
-                <img src="images/icons/edit-file.png" alt="Новости" width="16" class="me-1">Новости
+                <img src="images/icons/edit-file.png" alt="Новости" width="16" class="me-1">
             </button>
         </div>
 
@@ -42,8 +42,16 @@
             </tr>
             </thead>
             <tbody>
-            <?php
-            foreach ($recycle as $user): ?>
+            <?php if (empty($recycle)): ?>
+            <tr>
+                <td colspan="6">
+                    <div class="alert alert-light text-center mb-0" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>Нет удалённых пользователей для отображения.
+                    </div>
+                </td>
+            </tr>
+            <?php else: ?>
+            <?php foreach ($recycle as $user): ?>
                 <tr>
                     <td>
                         <?php
@@ -73,59 +81,50 @@
                 </tr>
             <?php
             endforeach; ?>
+            <?php endif; ?>
             </tbody>
         </table>
 
-        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-            <button type="submit" name="del" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-recycle"></i> Восстановить выбранное
-            </button>
+        <?php if (!empty($recycle)): ?>
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <button type="submit" name="del" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
+                    <i class="bi bi-recycle"></i> Восстановить выбранное
+                </button>
 
-            <nav aria-label="Pagination">
-                <ul class="pagination pagination-sm mb-0">
-                    <?php
-                    if (!empty($pagination['first'])): ?>
-                        <li class="page-item"><a class="page-link" href="index.php?c=recycle&delete=<?= urlencode(
-                                $_GET['delete'] ?? '',
-                            ) ?>&page=1">« В начало</a></li>
-                    <?php
-                    endif; ?>
+                <nav aria-label="Pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <?php if (!empty($pagination['first'])): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode($_GET['delete'] ?? '') ?>&page=1">« В начало</a>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php
-                    if (!empty($pagination['prev'])): ?>
-                        <li class="page-item"><a class="page-link" href="index.php?c=recycle&delete=<?= urlencode(
-                                $_GET['delete'] ?? '',
-                            ) ?>&page=<?= $pagination['prev'] ?>">« Назад</a></li>
-                    <?php
-                    endif; ?>
+                        <?php if (!empty($pagination['prev'])): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode($_GET['delete'] ?? '') ?>&page=<?= $pagination['prev'] ?>">« Назад</a>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php
-                    foreach ($pagination['pages'] as $p): ?>
-                        <li class="page-item <?= $p == $page ? 'active' : '' ?>">
-                            <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode(
-                                $_GET['delete'] ?? '',
-                            ) ?>&page=<?= $p ?>"><?= $p ?></a>
-                        </li>
-                    <?php
-                    endforeach; ?>
+                        <?php foreach ($pagination['pages'] as $p): ?>
+                            <li class="page-item <?= $p == $page ? 'active' : '' ?>">
+                                <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode($_GET['delete'] ?? '') ?>&page=<?= $p ?>"><?= $p ?></a>
+                            </li>
+                        <?php endforeach; ?>
 
-                    <?php
-                    if (!empty($pagination['next'])): ?>
-                        <li class="page-item"><a class="page-link" href="index.php?c=recycle&delete=<?= urlencode(
-                                $_GET['delete'] ?? '',
-                            ) ?>&page=<?= $pagination['next'] ?>">Вперед »</a></li>
-                    <?php
-                    endif; ?>
+                        <?php if (!empty($pagination['next'])): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode($_GET['delete'] ?? '') ?>&page=<?= $pagination['next'] ?>">Вперёд »</a>
+                            </li>
+                        <?php endif; ?>
 
-                    <?php
-                    if (!empty($pagination['last'])): ?>
-                        <li class="page-item"><a class="page-link" href="index.php?c=recycle&delete=<?= urlencode(
-                                $_GET['delete'] ?? '',
-                            ) ?>&page=<?= $pagination['last'] ?>">В конец »</a></li>
-                    <?php
-                    endif; ?>
-                </ul>
-            </nav>
-        </div>
+                        <?php if (!empty($pagination['last'])): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="index.php?c=recycle&delete=<?= urlencode($_GET['delete'] ?? '') ?>&page=<?= $pagination['last'] ?>">В конец »</a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            </div>
+        <?php endif; ?>
     </form>
 </div>

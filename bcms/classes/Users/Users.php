@@ -35,9 +35,9 @@ class Users extends Base
     private function handlePost(UserModel $userModel): void
     {
         $del = filter_input(INPUT_POST, 'del');
-        if ($del && isset($_POST['id_num']) && is_array($_POST['id_num'])) {
+        if (isset($del) && isset($_POST['id_num']) && is_array($_POST['id_num'])) {
             foreach ($_POST['id_num'] as $userId) {
-                $userModel->deleteUser((int)$userId[0]);
+                $userModel->deleteUser((int)$userId);
             }
         }
 

@@ -130,10 +130,22 @@ class DatabaseModel
         return $this->queryFetch($sql, ['id' => $id]);
     }
 
-    public function selectAllPage(int $start, int $num): array
+    public function selectAllPage(int $start, int $num): array|string
     {
-        $sql = 'SELECT *, DATE_FORMAT(`date`, "%d.%m.%Y") as date FROM `page` WHERE `delete` = 0 ORDER BY `id_page` DESC LIMIT :start, :num';
-        return $this->queryFetchAll($sql, ['start' => $start, 'num' => $num], [PDO::PARAM_INT, PDO::PARAM_INT]);
+        try {
+            $sql = "SELECT *, DATE_FORMAT(date, '%d.%m.%Y') AS date 
+                    FROM page 
+                    WHERE page.delete = 0 
+                    ORDER BY id_page DESC 
+                    LIMIT :start, :num";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':start', $start, PDO::PARAM_INT);
+            $stmt->bindValue(':num', $num, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
     public function findAll(string $field, string $text, string $table): array
@@ -162,25 +174,34 @@ class DatabaseModel
         $this->execute($sql, ['id' => $id]);
     }
 
-    public function countPage(): int
+    public function countPage(): array|string
     {
-        $sql = 'SELECT COUNT(*) as count FROM `page` WHERE `delete` = 0';
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = "SELECT COUNT(*) AS count FROM page WHERE page.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
-    public function countUsers(): int
+    public function countUsers(): array|string
     {
-        $sql = 'SELECT COUNT(*) as count FROM users';
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = "SELECT COUNT(*) AS count FROM users WHERE users.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
-    public function countNews(): int
+    public function countNews(): array|string
     {
-        $sql = 'SELECT COUNT(*) as count FROM news WHERE `delete` = 0';
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = "SELECT COUNT(*) AS count FROM news WHERE news.delete = 0";
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
     public function countGhost(): int
@@ -203,11 +224,14 @@ class DatabaseModel
         return $this->queryFetchAll($sql, ['start' => $start, 'num' => $num], [PDO::PARAM_INT, PDO::PARAM_INT]);
     }
 
-    public function countDel(string $table): int
+    public function countDel(string $table): array|string
     {
-        $sql = sprintf('SELECT COUNT(*) as count FROM `%s` WHERE `delete` = 1', $table);
-        $result = $this->queryFetch($sql);
-        return (int)($result['count'] ?? 0);
+        try {
+            $sql = sprintf('SELECT COUNT(*) as count FROM `%s` WHERE `delete` = 1', $table);
+            return $this->dbh->query($sql)->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return $e->getMessage();
+        }
     }
 
     public function addModulePage(int $id, string $module): void

@@ -37,6 +37,11 @@ class ViewMain extends Base
 
         $this->pageData = $database->selectPageId($id);
         $this->title = ($this->pageData['title'] ?? 'Без названия') . ' - Сайт школы';
+
+        if ($this->pageData['delete'] === 1) {
+            header('Location: index.php?c=view&id=1');
+            exit;
+        }
     }
 
     protected function onOutput(): void

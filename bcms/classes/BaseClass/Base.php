@@ -41,9 +41,9 @@ abstract class Base extends Controller
 
         $this->settings = $database->selectSettings();
 
-        $pageCount = $database->countDel('page');
-        $newsCount = $database->countDel('news');
-        $usersCount = $database->countDel('users');
+        $pageCount = $database->countDel('page')['count'] ?? 0;
+        $newsCount = $database->countDel('news')['count'] ?? 0;
+        $usersCount = $database->countDel('users')['count'] ?? 0;
 
         $this->recycleCount = $pageCount + $newsCount + $usersCount;
     }
