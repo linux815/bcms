@@ -5,10 +5,10 @@
             <h2 class="mb-4">Общая информация</h2>
             <div class="version-info mb-4">
                 <div class="d-flex align-items-start mb-3 border-bottom pb-3">
-                    <img src="images/icons/B.png" alt="Версия 4.0.0" title="Версия 4.0.0"
+                    <img src="images/icons/B.png" alt="Версия 4.0.1" title="Версия 4.0.1"
                          style="width:128px; height:128px;" class="me-3">
                     <div>
-                        <p class="mb-0"><strong>Текущая версия CMS:</strong> 4.0.0</p>
+                        <p class="mb-0"><strong>Текущая версия CMS:</strong> 4.0.1</p>
                     </div>
                 </div>
 
