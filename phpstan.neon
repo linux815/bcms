@@ -1,0 +1,10 @@
+parameters:
+  level: 6
+  paths:
+    - bcms/classes
+    - classes
+    - public
+    - helpers
+
+  ignoreErrors:
+      - '#type has no value type specified in iterable type array+#'
