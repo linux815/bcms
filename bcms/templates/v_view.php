@@ -1,3 +1,6 @@
+<?php
+use bcms\classes\Config\Version;
+?>
 <div class="row g-4">
     <!-- Левая колонка: Общая информация (шире) -->
     <div class="col-md-6">
@@ -5,10 +8,10 @@
             <h2 class="mb-4">Общая информация</h2>
             <div class="version-info mb-4">
                 <div class="d-flex align-items-start mb-3 border-bottom pb-3">
-                    <img src="images/icons/B.png" alt="Версия 4.0.1" title="Версия 4.0.1"
+                    <img src="images/icons/B.png" alt="Версия <?= Version::VERSION ?>" title="Версия <?= Version::VERSION ?>"
                          style="width:128px; height:128px;" class="me-3">
                     <div>
-                        <p class="mb-0"><strong>Текущая версия CMS:</strong> 4.0.1</p>
+                        <p class="mb-0"><strong>Текущая версия CMS:</strong> <?= Version::VERSION ?></p>
                     </div>
                 </div>
 

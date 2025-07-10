@@ -14,7 +14,7 @@ class Settings extends Base
     private string $nameSite = '';
     private string $template = '';
     private string $dbName = ''; // Пока не инициализирована — можно загрузить из конфига или убрать из шаблона
-    private string $version = '4.0.1';
+    private string $version = Version::VERSION;
     private int $news = 0;
     private int $review = 0;
     private int $mUsers = 0;
