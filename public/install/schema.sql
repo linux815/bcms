@@ -1,7 +1,3 @@
--- Создать базу, если не существует
-CREATE DATABASE IF NOT EXISTS bcms CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE bcms;
-
 -- Таблица новостей
 CREATE TABLE IF NOT EXISTS news
 (

@@ -17,37 +17,44 @@ use bcms\classes\ViewMain\ViewMain;
 header('Content-Type: text/html; charset=utf-8');
 date_default_timezone_set('Asia/Novosibirsk');
 
-// Подключаем автозагрузчик Composer
+// Composer Autoload + viteAssets helper
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../helpers/ViteAssets.php';
 
-// Загружаем переменные окружения
-try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
-    $dotenv->load();
-} catch (Throwable) {
+// Загружаем config
+$configPath = __DIR__ . '/../../bcms/classes/Config/Config.php';
+if (!file_exists($configPath)) {
     header("Location: /install");
     exit;
 }
 
-// Получаем хост из MYSQL_HOST, fallback на 'db'
-$host = $_ENV['MYSQL_HOST'] ?? 'db';
+require_once $configPath;
 
-// Псевдонимы переменных (для совместимости)
-$_ENV['HOSTNAME'] = $host;
-$_ENV['DBNAME'] = $_ENV['MYSQL_DATABASE'] ?? '';
-$_ENV['USERNAME'] = $_ENV['MYSQL_USER'] ?? '';
-$_ENV['PASSWORD'] = $_ENV['MYSQL_PASSWORD'] ?? '';
+// Проверка необходимых констант
+if (!defined('HOSTNAME') || !defined('USERNAME') || !defined('PASSWORD') || !defined('DBNAME')) {
+    header("Location: /install");
+    exit;
+}
 
-// Проверка: подключена ли БД и есть ли таблицы
+// Проверка подключения к БД и таблиц
 try {
-    $dsn = "mysql:host={$host};dbname={$_ENV['DBNAME']};charset=utf8mb4";
-    $pdo = new PDO($dsn, $_ENV['USERNAME'], $_ENV['PASSWORD'], [
+    $dsn = "mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . ";charset=utf8mb4";
+    $pdo = new PDO($dsn, USERNAME, PASSWORD, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 
-    $stmt = $pdo->query("SHOW TABLES");
-    if (!$stmt->fetchColumn()) {
+    $requiredTables = ['users', 'settings', 'page'];
+    $placeholders = rtrim(str_repeat('?,', count($requiredTables)), ',');
+    $sql = "SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = ? AND table_name IN ($placeholders)";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([DBNAME, ...$requiredTables]);
+    $foundTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $missingTables = array_diff($requiredTables, $foundTables);
+
+    if (!empty($missingTables)) {
         header("Location: /install");
         exit;
     }
@@ -81,5 +88,5 @@ $controller = match ($controllerName) {
     default => new ViewMain(),
 };
 
-// Запускаем контроллер
+// Запуск контроллера
 $controller->Request();
