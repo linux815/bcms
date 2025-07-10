@@ -24,11 +24,17 @@ try {
         [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'"],
     );
 
+    // Создание базы данных динамически
+    $dbh->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8 COLLATE utf8_general_ci");
+
+    // Подключаемся уже к базе данных
+    $dbh->exec("USE `$dbName`");
+    // Загружаем и выполняем SQL-дамп
     $sql = file_get_contents(__DIR__ . '/schema.sql');
     $sql = str_replace(
         ['{{DB}}', '{{SITE_NAME}}', '{{EMAIL}}'],
         [$dbName, $siteName, $email],
-        $sql,
+        $sql
     );
 
     $dbh->exec($sql);
@@ -36,18 +42,19 @@ try {
 
     // Генерация config
     $config = <<<PHP
-        <?php
-        /*
-         * Базовый конфигурационный файл
-         */
-        define("HOSTNAME", "$host");
-        define("USERNAME", "$user");
-        define("PASSWORD", "$password");
-        define("DBNAME", "$dbName");
-        define("EMAIL", "$email");
-        PHP;
+<?php
+/*
+ * Базовый конфигурационный файл
+ */
+define("HOSTNAME", "$host");
+define("USERNAME", "$user");
+define("PASSWORD", "$password");
+define("DBNAME", "$dbName");
+define("EMAIL", "$email");
+PHP;
 
     file_put_contents(__DIR__ . '/../../bcms/classes/Config/Config.php', $config);
+
     echo <<<HTML
 <div style="max-width: 600px; margin: 80px auto; text-align: center; font-family: sans-serif; border: 1px solid #ddd; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
     <h1 style="color: #28a745; margin-bottom: 1rem;">bCMS успешно установлена!</h1>
@@ -56,6 +63,7 @@ try {
     </a>
 </div>
 HTML;
+
 } catch (PDOException $e) {
-    echo "<p style='color: red;'>Ошибка подключения к БД: " . $e->getMessage() . "</p>";
+    echo "<p style='color: red;'>Ошибка подключения к БД: " . htmlspecialchars($e->getMessage()) . "</p>";
 }

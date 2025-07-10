@@ -13,7 +13,7 @@ services:
       - "443:443"    # HTTPS
       - "443:443/udp"# HTTP/3
       - "5173:5173"  # Vite dev server
-    restart: unless-stopped
+    restart: no
     env_file:
       - .env
     depends_on:
@@ -29,14 +29,12 @@ services:
   db:
     image: mysql:8.0
     container_name: bcms-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    restart: no
+    env_file:
+      - .env
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
 

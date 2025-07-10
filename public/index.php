@@ -14,11 +14,17 @@ use Classes\ViewMain\ViewMain;
 header("Content-Type: text/html; charset=utf-8");
 date_default_timezone_set('Asia/Novosibirsk');
 
-// Загружаем .env
-try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
-    $dotenv->load();
-} catch (Throwable) {
+// Загружаем config
+$configPath = __DIR__ . '/../bcms/classes/Config/Config.php';
+if (!file_exists($configPath)) {
+    header("Location: /install");
+    exit;
+}
+
+require_once $configPath;
+
+// Проверка необходимых констант
+if (!defined('HOSTNAME') || !defined('USERNAME') || !defined('PASSWORD') || !defined('DBNAME')) {
     header("Location: /install");
     exit;
 }
@@ -31,16 +37,23 @@ $password = $_ENV['MYSQL_PASSWORD'] ?? '';
 
 // Проверка подключения к БД и наличия таблиц
 try {
-    $dsn = "mysql:host={$host};dbname={$dbName};charset=utf8mb4";
-    $pdo = new PDO($dsn, $username, $password, [
+    $dsn = "mysql:host=" . HOSTNAME . ";dbname=" . DBNAME . ";charset=utf8mb4";
+    $pdo = new PDO($dsn, USERNAME, PASSWORD, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 
-    // Проверяем, есть ли таблицы в базе
-    $stmt = $pdo->query("SHOW TABLES");
-    $hasTables = $stmt->fetchColumn();
+    $requiredTables = ['users', 'settings', 'page'];
+    $placeholders = rtrim(str_repeat('?,', count($requiredTables)), ',');
+    $sql = "SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = ? AND table_name IN ($placeholders)";
 
-    if (!$hasTables) {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([DBNAME, ...$requiredTables]);
+    $foundTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $missingTables = array_diff($requiredTables, $foundTables);
+
+    if (!empty($missingTables)) {
         header("Location: /install");
         exit;
     }
