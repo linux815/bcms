@@ -19,7 +19,7 @@ class NewsModel
                 USERNAME,
                 PASSWORD,
                 [
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
+                    PDO\Mysql::ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 ],
             );
