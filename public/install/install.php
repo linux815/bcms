@@ -21,7 +21,7 @@ try {
         "mysql:host=$host;",
         $user,
         $password,
-        [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'"],
+        [PDO\Mysql::ATTR_INIT_COMMAND => "SET NAMES 'UTF8'"],
     );
 
     // Создание базы данных динамически
